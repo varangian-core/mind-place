@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState, useMemo, ReactNode } from 'react';
+import React, { useState, useMemo, ReactNode, createContext, useContext } from 'react';
 import { createTheme, ThemeProvider, CssBaseline, PaletteMode } from '@mui/material';
-import { FormControl, Select, MenuItem, Box } from '@mui/material';
 
-type ThemeMode = 'light' | 'dark' | 'synthwave';
+export type ThemeMode = 'light' | 'dark' | 'synthwave';
 
-interface ProvidersProps {
-    children: ReactNode;
+interface ThemeContextValue {
+    mode: ThemeMode;
+    setMode: (mode: ThemeMode) => void;
 }
+
+const ThemeContext = createContext<ThemeContextValue>({
+    mode: 'light',
+    setMode: () => {}
+});
 
 function getCustomTheme(mode: ThemeMode) {
     let palette;
@@ -39,7 +44,7 @@ function getCustomTheme(mode: ThemeMode) {
 
         case 'synthwave':
             palette = {
-                mode: 'dark' as PaletteMode, // Still dark mode but funky colors
+                mode: 'dark' as PaletteMode,
                 primary: { main: '#ff00c3' },
                 secondary: { main: '#00f2ff' },
                 background: { default: '#0c0322', paper: '#2d046e' },
@@ -51,9 +56,7 @@ function getCustomTheme(mode: ThemeMode) {
 
     return createTheme({
         palette,
-        typography: {
-            fontFamily: 'sans-serif',
-        },
+        typography: { fontFamily: 'sans-serif' },
         components: {
             MuiCssBaseline: {
                 styleOverrides: {
@@ -67,28 +70,23 @@ function getCustomTheme(mode: ThemeMode) {
     });
 }
 
+export { ThemeContext };
+
+interface ProvidersProps {
+    children: ReactNode;
+}
+
 export default function Providers({ children }: ProvidersProps) {
     const [themeMode, setThemeMode] = useState<ThemeMode>('light');
 
     const theme = useMemo(() => getCustomTheme(themeMode), [themeMode]);
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Box className="p-4 flex justify-end gap-2 items-center">
-                <FormControl size="small" variant="outlined">
-                    <Select
-                        value={themeMode}
-                        onChange={(e) => setThemeMode(e.target.value as ThemeMode)}
-                        sx={{ color: theme.palette.text.primary, borderColor: theme.palette.divider }}
-                    >
-                        <MenuItem value="light">Light</MenuItem>
-                        <MenuItem value="dark">Dark</MenuItem>
-                        <MenuItem value="synthwave">Synthwave</MenuItem>
-                    </Select>
-                </FormControl>
-            </Box>
-            {children}
-        </ThemeProvider>
+        <ThemeContext.Provider value={{ mode: themeMode, setMode: setThemeMode }}>
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                {children}
+            </ThemeProvider>
+        </ThemeContext.Provider>
     );
 }
