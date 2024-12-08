@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌀 MindPlace Snippet Manager
 
-## Getting Started
+**MindPlace Snippet Manager** is a powerful, pastebin-like platform designed to help you create, manage, and share code snippets with rich Markdown formatting. It seamlessly integrates with Google Drive for storage and leverages a Postgres database for managing snippet metadata. With a polished UI built on Next.js 13 (App Router), Material UI, Tailwind CSS, and Prisma, you’ll enjoy a delightful and themeable coding experience.
 
-First, run the development server:
+## ✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Theming Options:**  
+  Choose from **Light**, **Dark**, or **Synthwave** modes, directly from the sidebar. Instantly transform your interface’s look and feel.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Rich Markdown Support:**  
+  Write snippets using full Markdown, including:
+  - **Headings**, **bold**, *italic*, ***bold+italic*** text
+  - [Links](https://example.com), images, blockquotes, and tables
+  - Code blocks with syntax highlighting for multiple languages (e.g., ` ```java `, ` ```python `)
+  
+- **Enhanced Snippet Preview:**  
+  Toggle between editing Markdown and previewing rendered HTML with syntax highlighting. Tables, code blocks, blockquotes, and images all look great.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Integrated Storage & Metadata:**  
+  Store snippet files in Google Drive (optional) and maintain metadata (name, content, created date) in Postgres via Prisma.  
+  Each snippet gets a unique URL: `/gist/{id}` for easy sharing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Polished UI & Data Table:**  
+  Enjoy a professional UI with gradients, animated SVG backgrounds, and rounded corners. The MUI DataGrid lists snippets with:
+  - Name, URL link icon (opens in new tab)
+  - Content preview on hover
+  - Date created (formatted)
+  - Icon indicating Drive storage
 
-## Learn More
+- **Modern Tech Stack:**  
+  Built with [Next.js 13](https://nextjs.org/) (App Router), [Material UI](https://mui.com/), [Tailwind CSS](https://tailwindcss.com/), [Prisma](https://www.prisma.io/), and [react-markdown](https://github.com/remarkjs/react-markdown) + [remark-gfm](https://github.com/remarkjs/remark-gfm).
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/yourusername/mindplace-snippet-manager.git
+   cd mindplace-snippet-manager
