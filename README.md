@@ -36,5 +36,4 @@
    ```bash
   [ git clone https://github.com/yourusername/mindplace-snippet-manager.git](https://github.com/varangian-core/mind-place.git)
    cd mindplace-place
-  ```
   
