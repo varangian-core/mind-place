@@ -5,11 +5,14 @@ import { Box, Typography, Fab, Tooltip, useTheme } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import CreateSnippetDialog from './CreateSnippetDialog';
+import LinkIcon from '@mui/icons-material/Link';
+import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
 
 interface Snippet {
     id: string;
     name: string;
     content?: string;
+    createdAt: string;
 }
 
 export default function SnippetManager() {
@@ -44,8 +47,34 @@ export default function SnippetManager() {
         return content.length > length ? content.slice(0, length) + '...' : content;
     }
 
-    const columns: GridColDef[] = [
+    const columns: GridColDef<Snippet>[] = [
         { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+        {
+            field: 'url',
+            headerName: 'URL',
+            width: 60,
+            sortable: false,
+            renderCell: (params) => {
+                const snippetId = params.row.id;
+                return (
+                    <Tooltip title={`Open /gist/${snippetId}`}>
+                        <LinkIcon
+                            sx={{ cursor: 'pointer' }}
+                            onClick={() => window.open(`/gist/${snippetId}`, '_blank')}
+                        />
+                    </Tooltip>
+                );
+            }
+        },
+        {
+            field: 'createdAt',
+            headerName: 'Created',
+            width: 180,
+            valueFormatter: (params: any) => {
+                const dateVal = String(params.value);
+                return new Date(dateVal).toLocaleString();
+            }
+        },
         {
             field: 'content',
             headerName: 'Content Preview',
@@ -61,6 +90,17 @@ export default function SnippetManager() {
                 );
             }
         },
+        {
+            field: 'drive',
+            headerName: '',
+            width: 60,
+            sortable: false,
+            renderCell: () => (
+                <Tooltip title="Stored in Drive">
+                    <DriveFileMoveOutlined color="secondary" />
+                </Tooltip>
+            )
+        }
     ];
 
     return (
