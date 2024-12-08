@@ -34,5 +34,7 @@
 
 1. **Clone the repo:**
    ```bash
-   git clone https://github.com/yourusername/mindplace-snippet-manager.git
-   cd mindplace-snippet-manager
+  [ git clone https://github.com/yourusername/mindplace-snippet-manager.git](https://github.com/varangian-core/mind-place.git)
+   cd mindplace-place
+  ```
+  
