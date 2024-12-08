@@ -1,6 +1,8 @@
 import './globals.css';
 import type { ReactNode } from 'react';
 import Providers from './providers';
+import Sidebar from '@/components/Sidebar';
+import { Box } from '@mui/material';
 
 export const metadata = {
     title: 'MindPlace',
@@ -12,7 +14,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <html lang="en">
         <body>
         <Providers>
-            {children}
+            <Sidebar />
+            {/* Shift content to the right */}
+            <Box sx={{ marginLeft: '240px', padding: 2 }}>
+                {children}
+            </Box>
         </Providers>
         </body>
         </html>
