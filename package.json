@@ -9,6 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/icons-material": "^6.1.10",
+    "@mui/material": "^6.1.10",
+    "@mui/x-data-grid": "^7.23.1",
     "@prisma/client": "^6.0.1",
     "googleapis": "^144.0.0",
     "next": "15.0.4",

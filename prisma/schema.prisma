@@ -13,3 +13,10 @@ model User {
   name      String?
   createdAt DateTime @default(now())
 }
+
+model Snippet {
+  id        String   @id @default(cuid())
+  name      String
+  content   String
+  createdAt DateTime @default(now())
+}
