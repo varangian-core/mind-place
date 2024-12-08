@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { TextField, Button, List, ListItem, Typography, Box } from '@mui/material';
+
+interface Snippet {
+    id: string;
+    name: string;
+}
 
 export default function SnippetManager() {
-    const [snippets, setSnippets] = useState<{id: string, name: string}[]>([]);
+    const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [name, setName] = useState('');
     const [content, setContent] = useState('');
 
@@ -23,7 +29,7 @@ export default function SnippetManager() {
         });
         if (res.ok) {
             const data = await res.json();
-            setSnippets([...snippets, data.snippet]);
+            setSnippets(prev => [...prev, data.snippet]);
             setName('');
             setContent('');
         } else {
@@ -32,39 +38,48 @@ export default function SnippetManager() {
     }
 
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">MindPlace Snippets</h1>
+        <Box className="p-4 max-w-lg mx-auto">
+            <Typography variant="h4" component="h1" gutterBottom>
+                MindPlace Snippets
+            </Typography>
 
-            <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-2">Create a New Snippet</h2>
-                <input
-                    className="border p-2 mr-2"
-                    placeholder="Name"
+            <Box className="mb-8">
+                <Typography variant="h6" gutterBottom>
+                    Create a New Snippet
+                </Typography>
+                <TextField
+                    label="Name"
+                    variant="outlined"
+                    className="mr-2 mb-2"
                     value={name}
                     onChange={e => setName(e.target.value)}
+                    size="small"
                 />
-                <textarea
-                    className="border p-2 mr-2"
-                    placeholder="Content"
+                <TextField
+                    label="Content"
+                    variant="outlined"
+                    className="mr-2 mb-2"
                     value={content}
                     onChange={e => setContent(e.target.value)}
+                    size="small"
+                    multiline
+                    rows={3}
                 />
-                <button
-                    className="bg-blue-500 text-white p-2"
-                    onClick={createSnippet}
-                >
+                <Button variant="contained" color="primary" onClick={createSnippet}>
                     Create
-                </button>
-            </div>
+                </Button>
+            </Box>
 
-            <h2 className="text-xl font-semibold mb-2">Your Snippets</h2>
-            <ul className="space-y-2">
+            <Typography variant="h6" gutterBottom>
+                Your Snippets
+            </Typography>
+            <List>
                 {snippets.map((snippet) => (
-                    <li key={snippet.id} className="border-b pb-2">
+                    <ListItem key={snippet.id} divider>
                         {snippet.name}
-                    </li>
+                    </ListItem>
                 ))}
-            </ul>
-        </div>
+            </List>
+        </Box>
     );
 }
