@@ -1,27 +1,30 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { TextField, Button, List, ListItem, Typography, Box } from '@mui/material';
+import { Box, Typography, Fab, Tooltip } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import AddIcon from '@mui/icons-material/Add';
+import CreateSnippetDialog from './CreateSnippetDialog';
 
 interface Snippet {
     id: string;
     name: string;
+    content?: string; // Assuming our API returns content now
 }
 
 export default function SnippetManager() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
-    const [name, setName] = useState('');
-    const [content, setContent] = useState('');
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     useEffect(() => {
         fetch('/api/snippets')
             .then(res => res.json())
             .then(data => {
-                setSnippets(data.snippets);
+                setSnippets(data.snippets || []);
             });
     }, []);
 
-    async function createSnippet() {
+    async function createSnippet(name: string, content: string) {
         const res = await fetch('/api/snippets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -30,56 +33,75 @@ export default function SnippetManager() {
         if (res.ok) {
             const data = await res.json();
             setSnippets(prev => [...prev, data.snippet]);
-            setName('');
-            setContent('');
         } else {
             console.error('Error creating snippet');
         }
     }
 
+    // Truncate content for display
+    function truncateContent(content: string | undefined, length = 50) {
+        if (!content) return '';
+        return content.length > length ? content.slice(0, length) + '...' : content;
+    }
+
+    const columns: GridColDef[] = [
+        { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+        {
+            field: 'content',
+            headerName: 'Content Preview',
+            flex: 2,
+            minWidth: 200,
+            renderCell: (params) => {
+                const fullContent = params.row.content;
+                const truncated = truncateContent(fullContent, 50);
+                return (
+                    <Tooltip title={fullContent || ''}>
+                        <span>{truncated}</span>
+                    </Tooltip>
+                );
+            }
+        },
+    ];
+
     return (
-        <Box className="p-4 max-w-lg mx-auto">
+        <Box className="p-4 max-w-3xl mx-auto" sx={{ height: 500 }}>
             <Typography variant="h4" component="h1" gutterBottom>
                 MindPlace Snippets
             </Typography>
 
-            <Box className="mb-8">
-                <Typography variant="h6" gutterBottom>
-                    Create a New Snippet
-                </Typography>
-                <TextField
-                    label="Name"
-                    variant="outlined"
-                    className="mr-2 mb-2"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    size="small"
+            <Box sx={{ height: 400, mb: 4 }}>
+                <DataGrid
+                    rows={snippets}
+                    columns={columns}
+                    getRowId={(row) => row.id}
+                    pageSizeOptions={[5, 10]}
+                    initialState={{
+                        pagination: {
+                            paginationModel: { pageSize: 5, page: 0 }
+                        }
+                    }}
                 />
-                <TextField
-                    label="Content"
-                    variant="outlined"
-                    className="mr-2 mb-2"
-                    value={content}
-                    onChange={e => setContent(e.target.value)}
-                    size="small"
-                    multiline
-                    rows={3}
-                />
-                <Button variant="contained" color="primary" onClick={createSnippet}>
-                    Create
-                </Button>
             </Box>
 
-            <Typography variant="h6" gutterBottom>
-                Your Snippets
-            </Typography>
-            <List>
-                {snippets.map((snippet) => (
-                    <ListItem key={snippet.id} divider>
-                        {snippet.name}
-                    </ListItem>
-                ))}
-            </List>
+            {/* Floating action button to create new gist */}
+            <Fab
+                color="primary"
+                aria-label="add"
+                onClick={() => setDialogOpen(true)}
+                sx={{
+                    position: 'fixed',
+                    bottom: 32,
+                    right: 32,
+                }}
+            >
+                <AddIcon />
+            </Fab>
+
+            <CreateSnippetDialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                onCreate={createSnippet}
+            />
         </Box>
     );
 }
