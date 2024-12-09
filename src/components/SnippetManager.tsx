@@ -7,6 +7,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CreateSnippetDialog from './CreateSnippetDialog';
 import LinkIcon from '@mui/icons-material/Link';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
+import FuzzySearchModal from './FuzzySearchModal';
 
 interface Snippet {
     id: string;
@@ -18,12 +19,14 @@ interface Snippet {
 export default function SnippetManager() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false); // For fuzzy search modal
     const theme = useTheme();
 
     useEffect(() => {
         fetch('/api/snippets')
             .then(res => res.json())
             .then(data => {
+                console.log('Fetched snippets:', data.snippets);
                 setSnippets(data.snippets || []);
             });
     }, []);
@@ -71,8 +74,12 @@ export default function SnippetManager() {
             headerName: 'Created',
             width: 180,
             valueFormatter: (params: any) => {
-                const dateVal = String(params.value);
-                return new Date(dateVal).toLocaleString();
+                console.log('Date value from server:', params.value);
+                if (!params.value) return "No date";
+                const dateVal = new Date(params.value);
+                return isNaN(dateVal.getTime())
+                    ? "Invalid date"
+                    : dateVal.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
             }
         },
         {
@@ -102,6 +109,20 @@ export default function SnippetManager() {
             )
         }
     ];
+
+    useEffect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            // For Windows/Linux: Ctrl+K
+            // For Mac: Cmd+K
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            if ((isMac && e.metaKey && e.key === 'k') || (!isMac && e.ctrlKey && e.key === 'k')) {
+                e.preventDefault();
+                setSearchOpen(true);
+            }
+        }
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, []);
 
     return (
         <Box sx={{ position: 'relative', height: '100%' }}>
@@ -201,10 +222,18 @@ export default function SnippetManager() {
                 <AddIcon />
             </Fab>
 
+            {/* Updated prop names to onCloseAction and onCreateAction */}
             <CreateSnippetDialog
                 open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                onCreate={createSnippet}
+                onCloseAction={() => setDialogOpen(false)}
+                onCreateAction={createSnippet}
+            />
+
+            {/* Updated prop name to onCloseAction */}
+            <FuzzySearchModal
+                open={searchOpen}
+                onCloseAction={() => setSearchOpen(false)}
+                snippets={snippets}
             />
         </Box>
     );

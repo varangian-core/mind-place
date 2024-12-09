@@ -3,29 +3,28 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Tabs, Tab, Box } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown (tables, etc.)
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 interface CreateSnippetDialogProps {
     open: boolean;
-    onClose: () => void;
-    onCreate: (name: string, content: string) => void;
+    onCloseAction: () => void; // Renamed from onClose
+    onCreateAction: (name: string, content: string) => void; // Renamed from onCreate
 }
 
-export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateSnippetDialogProps) {
+export default function CreateSnippetDialog({ open, onCloseAction, onCreateAction }: CreateSnippetDialogProps) {
     const [name, setName] = useState('');
     const [content, setContent] = useState('');
     const [tabIndex, setTabIndex] = useState(0);
 
     function handleCreate() {
-        onCreate(name, content);
+        onCreateAction(name, content);
         setName('');
         setContent('');
-        onClose();
+        onCloseAction();
     }
 
-    // Custom renderers for code blocks and other elements
     const components = {
         code({ inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
@@ -45,7 +44,6 @@ export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateS
             );
         },
         blockquote({ children }: any) {
-            // Style blockquotes with a left border and italics
             return (
                 <Box
                     component="blockquote"
@@ -62,7 +60,6 @@ export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateS
             );
         },
         img({ src, alt }: { src?: string; alt?: string }) {
-            // Ensure images scale properly and are visible
             return (
                 <img
                     src={src}
@@ -76,7 +73,6 @@ export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateS
             );
         },
         a({ href, children }: any) {
-            // Make links open in new tab by default
             return (
                 <a href={href} target="_blank" rel="noopener noreferrer">
                     {children}
@@ -86,7 +82,7 @@ export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateS
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={onCloseAction} maxWidth="md" fullWidth>
             <DialogTitle>Create New Gist</DialogTitle>
             <DialogContent className="flex flex-col gap-4 mt-2">
                 <TextField
@@ -129,7 +125,6 @@ export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateS
                             maxHeight: 400
                         }}
                     >
-                        {/* Use remarkGfm to handle tables, strikethrough, etc. */}
                         <ReactMarkdown remarkPlugins={[remarkGfm]} components={components as any}>
                             {content || '*No content yet.*'}
                         </ReactMarkdown>
@@ -137,7 +132,7 @@ export default function CreateSnippetDialog({ open, onClose, onCreate }: CreateS
                 )}
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
+                <Button onClick={onCloseAction}>Cancel</Button>
                 <Button onClick={handleCreate} variant="contained" color="primary">
                     Create
                 </Button>
