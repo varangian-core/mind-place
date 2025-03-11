@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Paper, Dialog } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
@@ -24,28 +24,97 @@ export default function SnippetManager() {
     const [searchOpen, setSearchOpen] = useState(false); // For fuzzy search modal
     const [contentToCreate, setContentToCreate] = useState('');
     const [shortcutsOpen, setShortcutsOpen] = useState(false); // For shortcuts help panel
+    const [isUsingLocalStorage, setIsUsingLocalStorage] = useState(false);
     const theme = useTheme();
+
+    // Load snippets from localStorage
+    const loadLocalSnippets = useCallback(() => {
+        try {
+            const storedSnippets = localStorage.getItem('mindplace_snippets');
+            if (storedSnippets) {
+                return JSON.parse(storedSnippets);
+            }
+        } catch (error) {
+            console.error('Error loading from localStorage:', error);
+        }
+        return [];
+    }, []);
+
+    // Save snippets to localStorage
+    const saveLocalSnippets = useCallback((snippetsToSave: Snippet[]) => {
+        try {
+            localStorage.setItem('mindplace_snippets', JSON.stringify(snippetsToSave));
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
+    }, []);
 
     useEffect(() => {
         fetch('/api/snippets')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Database connection failed');
+                }
+                return res.json();
+            })
             .then(data => {
                 console.log('Fetched snippets:', data.snippets);
                 setSnippets(data.snippets || []);
+                setIsUsingLocalStorage(false);
+            })
+            .catch(error => {
+                console.warn('Using localStorage fallback due to:', error.message);
+                setSnippets(loadLocalSnippets());
+                setIsUsingLocalStorage(true);
             });
-    }, []);
+    }, [loadLocalSnippets]);
 
     async function createSnippet(name: string, content: string) {
-        const res = await fetch('/api/snippets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, content })
-        });
-        if (res.ok) {
-            const data = await res.json();
-            setSnippets(prev => [...prev, data.snippet]);
-        } else {
-            console.error('Error creating snippet');
+        if (isUsingLocalStorage) {
+            // Create a new snippet with a unique ID and timestamp
+            const newSnippet: Snippet = {
+                id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                name,
+                content,
+                createdAt: new Date().toISOString()
+            };
+            
+            const updatedSnippets = [...snippets, newSnippet];
+            setSnippets(updatedSnippets);
+            saveLocalSnippets(updatedSnippets);
+            return;
+        }
+        
+        try {
+            const res = await fetch('/api/snippets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, content })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                setSnippets(prev => [...prev, data.snippet]);
+            } else {
+                throw new Error('Failed to create snippet');
+            }
+        } catch (error) {
+            console.error('Error creating snippet:', error);
+            
+            // Fallback to localStorage if API fails
+            setIsUsingLocalStorage(true);
+            
+            // Create a new snippet with a unique ID and timestamp
+            const newSnippet: Snippet = {
+                id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                name,
+                content,
+                createdAt: new Date().toISOString()
+            };
+            
+            const updatedSnippets = [...snippets, newSnippet];
+            setSnippets(updatedSnippets);
+            saveLocalSnippets(updatedSnippets);
         }
     }
 
@@ -218,9 +287,29 @@ export default function SnippetManager() {
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h4" component="h1" sx={{ color: theme.palette.text.primary }}>
-                    MindPlace Snippets
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="h4" component="h1" sx={{ color: theme.palette.text.primary }}>
+                        MindPlace Snippets
+                    </Typography>
+                    {isUsingLocalStorage && (
+                        <Tooltip title="Using browser localStorage (database not connected)">
+                            <Box 
+                                component="span" 
+                                sx={{ 
+                                    backgroundColor: theme.palette.warning.main,
+                                    color: theme.palette.warning.contrastText,
+                                    px: 1,
+                                    py: 0.5,
+                                    borderRadius: 1,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                LOCAL STORAGE
+                            </Box>
+                        </Tooltip>
+                    )}
+                </Box>
                 <Tooltip title="Press Cmd/Ctrl + / for keyboard shortcuts">
                     <Typography variant="body2" sx={{ color: theme.palette.text.secondary, cursor: 'pointer' }}
                         onClick={() => setShortcutsOpen(true)}>
