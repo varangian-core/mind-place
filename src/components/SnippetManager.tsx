@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Fab, Tooltip, useTheme } from '@mui/material';
+import { Box, Typography, Fab, Tooltip, useTheme, IconButton } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CreateSnippetDialog from './CreateSnippetDialog';
 import LinkIcon from '@mui/icons-material/Link';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
@@ -50,8 +52,49 @@ export default function SnippetManager() {
         return content.length > length ? content.slice(0, length) + '...' : content;
     }
 
+    const handleCopyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            // Show some feedback to user
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
+
+    const handlePasteFromClipboard = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            // Open create dialog with pasted content
+            setContentToCreate(text);
+            setDialogOpen(true);
+        } catch (err) {
+            console.error('Failed to paste:', err);
+        }
+    };
+
     const columns: GridColDef<Snippet>[] = [
-        { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+        { 
+            field: 'name', 
+            headerName: 'Name', 
+            flex: 1, 
+            minWidth: 150,
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <span>{params.value}</span>
+                    <Tooltip title="Copy content">
+                        <IconButton 
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyToClipboard(params.row.content || '');
+                            }}
+                        >
+                            <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            )
+        },
         {
             field: 'url',
             headerName: 'URL',
@@ -112,17 +155,29 @@ export default function SnippetManager() {
 
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
-            // For Windows/Linux: Ctrl+K
-            // For Mac: Cmd+K
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            if ((isMac && e.metaKey && e.key === 'k') || (!isMac && e.ctrlKey && e.key === 'k')) {
+            const modKey = isMac ? e.metaKey : e.ctrlKey;
+            
+            // Search (Cmd/Ctrl + K)
+            if (modKey && e.key === 'k') {
                 e.preventDefault();
                 setSearchOpen(true);
             }
+            // New snippet (Cmd/Ctrl + N)
+            else if (modKey && e.key === 'n') {
+                e.preventDefault();
+                setDialogOpen(true);
+            }
+            // Paste snippet (Cmd/Ctrl + Shift + V)
+            else if (modKey && e.shiftKey && e.key === 'V') {
+                e.preventDefault();
+                handlePasteFromClipboard();
+            }
         }
+        
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, []);
+    }, [handlePasteFromClipboard]);
 
     return (
         <Box sx={{ position: 'relative', height: '100%' }}>
@@ -208,10 +263,20 @@ export default function SnippetManager() {
                 />
             </Box>
 
-            <Fab
-                color="primary"
-                aria-label="add"
-                onClick={() => setDialogOpen(true)}
+            <Box sx={{ position: 'fixed', bottom: 32, right: 32, display: 'flex', gap: 2 }}>
+                <Tooltip title="Paste from clipboard">
+                    <Fab
+                        color="secondary"
+                        aria-label="paste"
+                        onClick={handlePasteFromClipboard}
+                    >
+                        <ContentPasteIcon />
+                    </Fab>
+                </Tooltip>
+                <Fab
+                    color="primary"
+                    aria-label="add"
+                    onClick={() => setDialogOpen(true)}
                 sx={{
                     position: 'fixed',
                     bottom: 32,
