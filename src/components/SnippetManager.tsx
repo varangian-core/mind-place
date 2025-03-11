@@ -281,6 +281,7 @@ export default function SnippetManager() {
                 >
                     <AddIcon />
                 </Fab>
+            </Box>
 
             {/* Updated prop names to onCloseAction and onCreateAction */}
             <CreateSnippetDialog
