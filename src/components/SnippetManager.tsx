@@ -22,6 +22,7 @@ export default function SnippetManager() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false); // For fuzzy search modal
+    const [contentToCreate, setContentToCreate] = useState('');
     const theme = useTheme();
 
     useEffect(() => {
@@ -61,7 +62,7 @@ export default function SnippetManager() {
         }
     };
 
-    const handlePasteFromClipboard = async () => {
+    const handlePasteFromClipboard = React.useCallback(async () => {
         try {
             const text = await navigator.clipboard.readText();
             // Open create dialog with pasted content
@@ -70,7 +71,7 @@ export default function SnippetManager() {
         } catch (err) {
             console.error('Failed to paste:', err);
         }
-    };
+    }, []);
 
     const columns: GridColDef<Snippet>[] = [
         { 
@@ -277,21 +278,16 @@ export default function SnippetManager() {
                     color="primary"
                     aria-label="add"
                     onClick={() => setDialogOpen(true)}
-                sx={{
-                    position: 'fixed',
-                    bottom: 32,
-                    right: 32,
-                    boxShadow: `0 4px 10px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.2)'}`
-                }}
-            >
-                <AddIcon />
-            </Fab>
+                >
+                    <AddIcon />
+                </Fab>
 
             {/* Updated prop names to onCloseAction and onCreateAction */}
             <CreateSnippetDialog
                 open={dialogOpen}
                 onCloseAction={() => setDialogOpen(false)}
                 onCreateAction={createSnippet}
+                initialContent={contentToCreate}
             />
 
             {/* Updated prop name to onCloseAction */}

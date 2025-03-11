@@ -11,12 +11,20 @@ interface CreateSnippetDialogProps {
     open: boolean;
     onCloseAction: () => void; // Renamed from onClose
     onCreateAction: (name: string, content: string) => void; // Renamed from onCreate
+    initialContent?: string; // Optional prop for pasted content
 }
 
-export default function CreateSnippetDialog({ open, onCloseAction, onCreateAction }: CreateSnippetDialogProps) {
+export default function CreateSnippetDialog({ open, onCloseAction, onCreateAction, initialContent = '' }: CreateSnippetDialogProps) {
     const [name, setName] = useState('');
-    const [content, setContent] = useState('');
+    const [content, setContent] = useState(initialContent);
     const [tabIndex, setTabIndex] = useState(0);
+    
+    // Update content when initialContent changes
+    useEffect(() => {
+        if (initialContent) {
+            setContent(initialContent);
+        }
+    }, [initialContent]);
 
     function handleCreate() {
         onCreateAction(name, content);
