@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Paper, Dialog } from '@mui/material';
+import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Paper, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -10,7 +10,7 @@ import CreateSnippetDialog from './CreateSnippetDialog';
 import LinkIcon from '@mui/icons-material/Link';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
 import FuzzySearchModal from './FuzzySearchModal';
-import { loadLocalSnippets, saveLocalSnippets } from '@/lib/localStorageUtils';
+import { loadLocalSnippets, saveLocalSnippets, loadLocalTopics, createLocalSnippet, createLocalTopic } from '@/lib/localStorageUtils';
 
 interface Topic {
     id: string;
@@ -52,10 +52,19 @@ export default function SnippetManager() {
                 return res.json();
             })
             .then(data => {
-                console.log('Fetched snippets:', data.snippets);
-                setSnippets(data.snippets || []);
-                setTopics(data.topics || []);
-                setIsUsingLocalStorage(false);
+                console.log('Fetched snippets:', data);
+                
+                // Check if the API is telling us to use localStorage
+                if (data.usingLocalStorage) {
+                    console.warn('API indicated to use localStorage');
+                    setSnippets(loadLocalSnippets());
+                    setTopics(loadLocalTopics());
+                    setIsUsingLocalStorage(true);
+                } else {
+                    setSnippets(data.snippets || []);
+                    setTopics(data.topics || []);
+                    setIsUsingLocalStorage(false);
+                }
             })
             .catch(error => {
                 console.warn('Using localStorage fallback due to:', error.message);
@@ -172,29 +181,45 @@ export default function SnippetManager() {
             snippet.topicId === selectedTopic || 
             (snippet.topic && snippet.topic.id === selectedTopic)
         );
+    
+    // Prepare data for DataGrid - ensure all required fields exist
+    const safeSnippets = filteredSnippets.map(snippet => ({
+        ...snippet,
+        // Ensure these fields exist to prevent runtime errors
+        id: snippet.id || `fallback-${Math.random()}`,
+        name: snippet.name || 'Untitled',
+        content: snippet.content || '',
+        createdAt: snippet.createdAt || new Date().toISOString(),
+        // Create a safe topic object
+        topicName: snippet.topic?.name || 'Uncategorized',
+        // Add any other fields needed by renderCell functions
+    }));
         
-    const columns: GridColDef<Snippet>[] = [
+    const columns: GridColDef[] = [
         { 
             field: 'name', 
             headerName: 'Name', 
             flex: 1, 
             minWidth: 150,
-            renderCell: (params) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <span>{params.value}</span>
-                    <Tooltip title="Copy content">
-                        <IconButton 
-                            size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleCopyToClipboard(params.row.content || '');
-                            }}
-                        >
-                            <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            )
+            renderCell: (params) => {
+                if (!params.row) return null;
+                return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>{params.row.name || ''}</span>
+                        <Tooltip title="Copy content">
+                            <IconButton 
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyToClipboard(params.row.content || '');
+                                }}
+                            >
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                );
+            }
         },
         {
             field: 'url',
@@ -202,6 +227,7 @@ export default function SnippetManager() {
             width: 60,
             sortable: false,
             renderCell: (params) => {
+                if (!params.row) return null;
                 const snippetId = params.row.id;
                 return (
                     <Tooltip title={`Open /gist/${snippetId}`}>
@@ -214,28 +240,29 @@ export default function SnippetManager() {
             }
         },
         {
-            field: 'topic',
+            field: 'topicName',
             headerName: 'Topic',
             width: 150,
-            valueGetter: (params) => params.row.topic?.name || 'Uncategorized',
-            renderCell: (params) => (
-                <Box sx={{ 
-                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: '0.75rem'
-                }}>
-                    {params.row.topic?.name || 'Uncategorized'}
-                </Box>
-            )
+            renderCell: (params) => {
+                if (!params.row) return null;
+                return (
+                    <Box sx={{ 
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        fontSize: '0.75rem'
+                    }}>
+                        {params.row.topicName || 'Uncategorized'}
+                    </Box>
+                );
+            }
         },
         {
             field: 'createdAt',
             headerName: 'Created',
             width: 180,
-            valueFormatter: (params: any) => {
-                console.log('Date value from server:', params.value);
+            valueFormatter: (params) => {
                 if (!params.value) return "No date";
                 try {
                     const dateVal = new Date(params.value);
@@ -259,6 +286,7 @@ export default function SnippetManager() {
             flex: 2,
             minWidth: 200,
             renderCell: (params) => {
+                if (!params.row) return null;
                 const fullContent = params.row.content;
                 const truncated = truncateContent(fullContent, 50);
                 return (
@@ -417,15 +445,16 @@ export default function SnippetManager() {
                 }}
             >
                 <DataGrid
-                    rows={filteredSnippets}
+                    rows={safeSnippets}
                     columns={columns}
-                    getRowId={(row) => row.id}
+                    getRowId={(row) => row.id || 'fallback-id'}
                     pageSizeOptions={[5, 10]}
                     initialState={{
                         pagination: {
                             paginationModel: { pageSize: 5, page: 0 }
                         }
                     }}
+                    disableRowSelectionOnClick
                     sx={{
                         border: 'none',
                         '.MuiDataGrid-columnHeaders': {
