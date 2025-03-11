@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Paper, Dialog } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
@@ -10,6 +10,7 @@ import CreateSnippetDialog from './CreateSnippetDialog';
 import LinkIcon from '@mui/icons-material/Link';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
 import FuzzySearchModal from './FuzzySearchModal';
+import { loadLocalSnippets, saveLocalSnippets } from '@/lib/localStorageUtils';
 
 interface Snippet {
     id: string;
@@ -27,27 +28,6 @@ export default function SnippetManager() {
     const [isUsingLocalStorage, setIsUsingLocalStorage] = useState(false);
     const theme = useTheme();
 
-    // Load snippets from localStorage
-    const loadLocalSnippets = useCallback(() => {
-        try {
-            const storedSnippets = localStorage.getItem('mindplace_snippets');
-            if (storedSnippets) {
-                return JSON.parse(storedSnippets);
-            }
-        } catch (error) {
-            console.error('Error loading from localStorage:', error);
-        }
-        return [];
-    }, []);
-
-    // Save snippets to localStorage
-    const saveLocalSnippets = useCallback((snippetsToSave: Snippet[]) => {
-        try {
-            localStorage.setItem('mindplace_snippets', JSON.stringify(snippetsToSave));
-        } catch (error) {
-            console.error('Error saving to localStorage:', error);
-        }
-    }, []);
 
     useEffect(() => {
         fetch('/api/snippets')
@@ -67,7 +47,7 @@ export default function SnippetManager() {
                 setSnippets(loadLocalSnippets());
                 setIsUsingLocalStorage(true);
             });
-    }, [loadLocalSnippets]);
+    }, []);
 
     async function createSnippet(name: string, content: string) {
         if (isUsingLocalStorage) {
@@ -190,10 +170,20 @@ export default function SnippetManager() {
             valueFormatter: (params: any) => {
                 console.log('Date value from server:', params.value);
                 if (!params.value) return "No date";
-                const dateVal = new Date(params.value);
-                return isNaN(dateVal.getTime())
-                    ? "Invalid date"
-                    : dateVal.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+                try {
+                    const dateVal = new Date(params.value);
+                    return dateVal.toLocaleString("en-US", { 
+                        timeZone: "America/Los_Angeles",
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } catch (error) {
+                    console.error('Error formatting date:', error);
+                    return "Invalid date";
+                }
             }
         },
         {
