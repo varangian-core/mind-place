@@ -341,7 +341,13 @@ export default function SnippetManager() {
     }, [handlePasteFromClipboard]);
 
     return (
-        <Box sx={{ position: 'relative', height: '100%' }}>
+        <Box sx={{ 
+            position: 'relative', 
+            height: '100%',
+            backgroundColor: theme.palette.background.default,
+            padding: 2,
+            borderRadius: 2
+        }}>
             {/* Animated SVG background */}
             <Box
                 sx={{
@@ -371,7 +377,15 @@ export default function SnippetManager() {
                 </svg>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 2,
+                backgroundColor: theme.palette.background.paper,
+                padding: 2,
+                borderRadius: 2
+            }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Typography variant="h4" component="h1" sx={{ color: theme.palette.text.primary }}>
                         MindPlace Snippets
@@ -404,7 +418,15 @@ export default function SnippetManager() {
             </Box>
             
             {/* Topic filter */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 2,
+                backgroundColor: theme.palette.background.paper,
+                padding: 2,
+                borderRadius: 2
+            }}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Button 
                         variant={selectedTopic === 'all' ? 'contained' : 'outlined'}
@@ -440,7 +462,9 @@ export default function SnippetManager() {
                     borderRadius: 2,
                     overflow: 'hidden',
                     boxShadow: `0 4px 20px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.1)'}`,
-                    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                    background: theme.palette.mode === 'dark' 
+                        ? `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
+                        : theme.palette.background.paper,
                     transition: 'background 0.3s ease'
                 }}
             >
@@ -478,6 +502,10 @@ export default function SnippetManager() {
                         },
                         '.MuiDataGrid-cell': {
                             borderBottom: `1px solid ${theme.palette.divider}`
+                        },
+                        // Fix for black border in light mode
+                        '& .MuiDataGrid-main': {
+                            border: `1px solid ${theme.palette.divider}`
                         }
                     }}
                 />
@@ -568,43 +596,89 @@ export default function SnippetManager() {
                 onClose={() => setShortcutsOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                PaperProps={{
+                    sx: {
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: 0,
+                            height: 0,
+                            borderStyle: 'solid',
+                            borderWidth: '0 40px 40px 0',
+                            borderColor: `transparent ${theme.palette.secondary.main} transparent transparent`,
+                            zIndex: 1
+                        }
+                    }
+                }}
             >
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h5" component="h2" gutterBottom>
                         Keyboard Shortcuts
                     </Typography>
                     
-                    <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 2, color: theme.palette.secondary.main }}>
                         Global Shortcuts
                     </Typography>
                     <Box component="table" sx={{ width: '100%', mb: 3 }}>
                         <Box component="tbody">
-                            <Box component="tr">
-                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + K</Box>
+                            <Box component="tr" sx={{ 
+                                '&:nth-of-type(odd)': { 
+                                    backgroundColor: theme.palette.mode === 'dark' 
+                                        ? 'rgba(255,255,255,0.05)' 
+                                        : 'rgba(0,0,0,0.02)' 
+                                }
+                            }}>
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold', color: theme.palette.primary.main }}>Cmd/Ctrl + K</Box>
                                 <Box component="td" sx={{ p: 1 }}>Open fuzzy search</Box>
                             </Box>
-                            <Box component="tr">
-                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + N</Box>
+                            <Box component="tr" sx={{ 
+                                '&:nth-of-type(even)': { 
+                                    backgroundColor: theme.palette.mode === 'dark' 
+                                        ? 'rgba(255,255,255,0.02)' 
+                                        : 'rgba(0,0,0,0.01)' 
+                                }
+                            }}>
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold', color: theme.palette.primary.main }}>Cmd/Ctrl + N</Box>
                                 <Box component="td" sx={{ p: 1 }}>Create new snippet</Box>
                             </Box>
-                            <Box component="tr">
-                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + Shift + V</Box>
+                            <Box component="tr" sx={{ 
+                                '&:nth-of-type(odd)': { 
+                                    backgroundColor: theme.palette.mode === 'dark' 
+                                        ? 'rgba(255,255,255,0.05)' 
+                                        : 'rgba(0,0,0,0.02)' 
+                                }
+                            }}>
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold', color: theme.palette.primary.main }}>Cmd/Ctrl + Shift + V</Box>
                                 <Box component="td" sx={{ p: 1 }}>Paste from clipboard</Box>
                             </Box>
-                            <Box component="tr">
-                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + /</Box>
+                            <Box component="tr" sx={{ 
+                                '&:nth-of-type(even)': { 
+                                    backgroundColor: theme.palette.mode === 'dark' 
+                                        ? 'rgba(255,255,255,0.02)' 
+                                        : 'rgba(0,0,0,0.01)' 
+                                }
+                            }}>
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold', color: theme.palette.primary.main }}>Cmd/Ctrl + /</Box>
                                 <Box component="td" sx={{ p: 1 }}>Toggle this help panel</Box>
                             </Box>
                         </Box>
                     </Box>
 
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: theme.palette.secondary.main }}>
                         In Editor
                     </Typography>
                     <Box component="table" sx={{ width: '100%' }}>
                         <Box component="tbody">
-                            <Box component="tr">
-                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Tab</Box>
+                            <Box component="tr" sx={{ 
+                                backgroundColor: theme.palette.mode === 'dark' 
+                                    ? 'rgba(255,255,255,0.05)' 
+                                    : 'rgba(0,0,0,0.02)' 
+                            }}>
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold', color: theme.palette.primary.main }}>Tab</Box>
                                 <Box component="td" sx={{ p: 1 }}>Switch between Edit and Preview tabs</Box>
                             </Box>
                         </Box>
