@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Fab, Tooltip, useTheme, IconButton } from '@mui/material';
+import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Paper, Dialog } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -23,6 +23,7 @@ export default function SnippetManager() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false); // For fuzzy search modal
     const [contentToCreate, setContentToCreate] = useState('');
+    const [shortcutsOpen, setShortcutsOpen] = useState(false); // For shortcuts help panel
     const theme = useTheme();
 
     useEffect(() => {
@@ -174,6 +175,11 @@ export default function SnippetManager() {
                 e.preventDefault();
                 handlePasteFromClipboard();
             }
+            // Toggle shortcuts help (Cmd/Ctrl + /)
+            else if (modKey && e.key === '/') {
+                e.preventDefault();
+                setShortcutsOpen(prev => !prev);
+            }
         }
         
         window.addEventListener('keydown', onKeyDown);
@@ -211,9 +217,17 @@ export default function SnippetManager() {
                 </svg>
             </Box>
 
-            <Typography variant="h4" component="h1" gutterBottom sx={{ color: theme.palette.text.primary }}>
-                MindPlace Snippets
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h4" component="h1" sx={{ color: theme.palette.text.primary }}>
+                    MindPlace Snippets
+                </Typography>
+                <Tooltip title="Press Cmd/Ctrl + / for keyboard shortcuts">
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary, cursor: 'pointer' }}
+                        onClick={() => setShortcutsOpen(true)}>
+                        Keyboard Shortcuts (Cmd/Ctrl + /)
+                    </Typography>
+                </Tooltip>
+            </Box>
 
             <Box
                 sx={{
@@ -297,6 +311,56 @@ export default function SnippetManager() {
                 onCloseAction={() => setSearchOpen(false)}
                 snippets={snippets}
             />
+
+            {/* Keyboard Shortcuts Help Dialog */}
+            <Dialog 
+                open={shortcutsOpen} 
+                onClose={() => setShortcutsOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <Box sx={{ p: 3 }}>
+                    <Typography variant="h5" component="h2" gutterBottom>
+                        Keyboard Shortcuts
+                    </Typography>
+                    
+                    <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                        Global Shortcuts
+                    </Typography>
+                    <Box component="table" sx={{ width: '100%', mb: 3 }}>
+                        <Box component="tbody">
+                            <Box component="tr">
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + K</Box>
+                                <Box component="td" sx={{ p: 1 }}>Open fuzzy search</Box>
+                            </Box>
+                            <Box component="tr">
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + N</Box>
+                                <Box component="td" sx={{ p: 1 }}>Create new snippet</Box>
+                            </Box>
+                            <Box component="tr">
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + Shift + V</Box>
+                                <Box component="td" sx={{ p: 1 }}>Paste from clipboard</Box>
+                            </Box>
+                            <Box component="tr">
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Cmd/Ctrl + /</Box>
+                                <Box component="td" sx={{ p: 1 }}>Toggle this help panel</Box>
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    <Typography variant="h6" gutterBottom>
+                        In Editor
+                    </Typography>
+                    <Box component="table" sx={{ width: '100%' }}>
+                        <Box component="tbody">
+                            <Box component="tr">
+                                <Box component="td" sx={{ p: 1, fontWeight: 'bold' }}>Tab</Box>
+                                <Box component="td" sx={{ p: 1 }}>Switch between Edit and Preview tabs</Box>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
+            </Dialog>
         </Box>
     );
 }
