@@ -12,6 +12,12 @@ interface ClientGistPageProps {
         name: string;
         content: string;
         createdAt: string;
+        topicId?: string;
+        topic?: {
+            id: string;
+            name: string;
+            description?: string;
+        };
     } | null;
 }
 

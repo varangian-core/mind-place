@@ -10,6 +10,12 @@ interface Snippet {
     name: string;
     content?: string;
     createdAt: string; // ISO string
+    topicId?: string;
+    topic?: {
+        id: string;
+        name: string;
+        description?: string;
+    };
 }
 
 interface FuzzySearchModalProps {
@@ -25,7 +31,7 @@ export default function FuzzySearchModal({ open, onCloseAction, snippets }: Fuzz
 
     const fuse = useMemo(() => {
         return new Fuse(snippets, {
-            keys: ['name', 'content'],
+            keys: ['name', 'content', 'topic.name'],
             threshold: 0.3,
             ignoreLocation: true,
         });
@@ -148,12 +154,27 @@ export default function FuzzySearchModal({ open, onCloseAction, snippets }: Fuzz
                             }}
                         >
                             <Box>
-                                <Typography variant="body1" sx={{ fontWeight: 500 }}>{r.item.name}</Typography>
-                                {r.item.content && (
-                                    <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.5 }}>
-                                        {r.item.content}
-                                    </Typography>
-                                )}
+                                <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{r.item.name}</Typography>
+                                        {r.item.topic && (
+                                            <Box sx={{ 
+                                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                fontSize: '0.75rem'
+                                            }}>
+                                                {r.item.topic.name}
+                                            </Box>
+                                        )}
+                                    </Box>
+                                    {r.item.content && (
+                                        <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.5 }}>
+                                            {r.item.content}
+                                        </Typography>
+                                    )}
+                                </Box>
                             </Box>
                         </ListItemButton>
                     ))}

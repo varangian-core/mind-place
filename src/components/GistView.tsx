@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Box, Typography, Button, Tooltip, TextField, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Button, Tooltip, TextField, Tabs, Tab, useTheme } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -12,6 +12,12 @@ interface Snippet {
     name: string;
     content: string;
     createdAt: string; // ISO string from the server (UTC)
+    topicId?: string;
+    topic?: {
+        id: string;
+        name: string;
+        description?: string;
+    };
 }
 
 interface GistViewProps {
@@ -22,6 +28,7 @@ export default function GistView({ snippet }: GistViewProps) {
     const [content, setContent] = useState(snippet.content);
     const [tabIndex, setTabIndex] = useState(0); // 0: view, 1: edit
     const [copied, setCopied] = useState(false);
+    const theme = useTheme();
 
     function copyToClipboard() {
         navigator.clipboard.writeText(content)
@@ -87,9 +94,22 @@ export default function GistView({ snippet }: GistViewProps) {
 
     return (
         <Box sx={{ p: 4, maxWidth: '800px', mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom>
-                {snippet.name}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Typography variant="h4" component="h1">
+                    {snippet.name}
+                </Typography>
+                {snippet.topic && (
+                    <Box sx={{ 
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: 1,
+                        fontSize: '0.875rem'
+                    }}>
+                        {snippet.topic.name}
+                    </Box>
+                )}
+            </Box>
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                 Created: {pstDate} (PST)
             </Typography>
