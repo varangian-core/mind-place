@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const { name, content } = await req.json();
+        const { name, content, tags } = await req.json();
         if (!name || !content) {
             return NextResponse.json({ error: 'Name and content required' }, { status: 400 });
         }
@@ -24,8 +24,24 @@ export async function POST(req: Request) {
         // Store the current time in UTC
         const now = new Date();
 
+        // Create or connect tags
+        const tagConnections = tags?.map((tagName: string) => ({
+          where: { name: tagName },
+          create: { name: tagName }
+        })) || [];
+
         const snippet = await prisma.snippet.create({
-            data: { name, content, createdAt: now }
+            data: { 
+                name, 
+                content, 
+                createdAt: now,
+                tags: {
+                    connectOrCreate: tagConnections
+                }
+            },
+            include: {
+                tags: true
+            }
         });
 
         return NextResponse.json({ snippet }, { status: 201 });
