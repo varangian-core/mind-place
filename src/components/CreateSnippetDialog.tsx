@@ -1,23 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Tabs, Tab, Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Tabs, Tab, Box, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { Topic } from '@/lib/localStorageUtils';
 
 interface CreateSnippetDialogProps {
     open: boolean;
     onCloseAction: () => void; // Renamed from onClose
-    onCreateAction: (name: string, content: string) => void; // Renamed from onCreate
+    onCreateAction: (name: string, content: string, topicId?: string) => void; // Updated to include topicId
     initialContent?: string; // Optional prop for pasted content
+    topics: Topic[]; // Available topics
 }
 
-export default function CreateSnippetDialog({ open, onCloseAction, onCreateAction, initialContent = '' }: CreateSnippetDialogProps) {
+export default function CreateSnippetDialog({ open, onCloseAction, onCreateAction, initialContent = '', topics }: CreateSnippetDialogProps) {
     const [name, setName] = useState('');
     const [content, setContent] = useState(initialContent);
     const [tabIndex, setTabIndex] = useState(0);
+    const [selectedTopicId, setSelectedTopicId] = useState<string>('');
     
     // Update content when initialContent changes
     useEffect(() => {
@@ -27,11 +30,16 @@ export default function CreateSnippetDialog({ open, onCloseAction, onCreateActio
     }, [initialContent]);
 
     function handleCreate() {
-        onCreateAction(name, content);
+        onCreateAction(name, content, selectedTopicId || undefined);
         setName('');
         setContent('');
+        setSelectedTopicId('');
         onCloseAction();
     }
+    
+    const handleTopicChange = (event: SelectChangeEvent) => {
+        setSelectedTopicId(event.target.value);
+    };
 
     const components = {
         code({ inline, className, children, ...props }: any) {
@@ -105,6 +113,26 @@ export default function CreateSnippetDialog({ open, onCloseAction, onCreateActio
                     fullWidth
                     InputProps={{ readOnly: true }}
                 />
+                
+                <FormControl fullWidth sx={{ mt: 2 }}>
+                    <InputLabel id="topic-select-label">Topic</InputLabel>
+                    <Select
+                        labelId="topic-select-label"
+                        id="topic-select"
+                        value={selectedTopicId}
+                        label="Topic"
+                        onChange={handleTopicChange}
+                    >
+                        <MenuItem value="">
+                            <em>None</em>
+                        </MenuItem>
+                        {topics.map((topic) => (
+                            <MenuItem key={topic.id} value={topic.id}>
+                                {topic.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
 
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={tabIndex} onChange={(e, newVal) => setTabIndex(newVal)}>

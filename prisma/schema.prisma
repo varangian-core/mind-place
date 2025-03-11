@@ -21,10 +21,20 @@ model Tag {
   createdAt DateTime @default(now())
 }
 
+model Topic {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  snippets    Snippet[]
+  createdAt   DateTime  @default(now())
+}
+
 model Snippet {
   id        String   @id @default(cuid())
   name      String
   content   String
   tags      Tag[]
+  topic     Topic?   @relation(fields: [topicId], references: [id])
+  topicId   Int?
   createdAt DateTime @default(now())
 }

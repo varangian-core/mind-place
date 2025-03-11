@@ -4,10 +4,19 @@ import prisma from '@/lib/prisma';
 export async function GET() {
     try {
         const snippets = await prisma.snippet.findMany({
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: {
+                tags: true,
+                topic: true
+            }
         });
+        
+        const topics = await prisma.topic.findMany({
+            orderBy: { name: 'asc' }
+        });
+        
         console.log('Server fetched snippets:', snippets);
-        return NextResponse.json({ snippets });
+        return NextResponse.json({ snippets, topics });
     } catch (error: any) {
         console.error('Error fetching snippets:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -16,7 +25,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const { name, content, tags } = await req.json();
+        const { name, content, tags, topicId } = await req.json();
         if (!name || !content) {
             return NextResponse.json({ error: 'Name and content required' }, { status: 400 });
         }
@@ -30,17 +39,28 @@ export async function POST(req: Request) {
           create: { name: tagName }
         })) || [];
 
+        // Prepare data object with optional topic connection
+        const data: any = { 
+            name, 
+            content, 
+            createdAt: now,
+            tags: {
+                connectOrCreate: tagConnections
+            }
+        };
+        
+        // Add topic relation if topicId is provided
+        if (topicId) {
+            data.topic = {
+                connect: { id: parseInt(topicId) }
+            };
+        }
+
         const snippet = await prisma.snippet.create({
-            data: { 
-                name, 
-                content, 
-                createdAt: now,
-                tags: {
-                    connectOrCreate: tagConnections
-                }
-            },
+            data,
             include: {
-                tags: true
+                tags: true,
+                topic: true
             }
         });
 

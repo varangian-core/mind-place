@@ -12,16 +12,30 @@ import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
 import FuzzySearchModal from './FuzzySearchModal';
 import { loadLocalSnippets, saveLocalSnippets } from '@/lib/localStorageUtils';
 
+interface Topic {
+    id: string;
+    name: string;
+    description?: string;
+    _count?: {
+        snippets: number;
+    };
+}
+
 interface Snippet {
     id: string;
     name: string;
     content?: string;
     createdAt: string;
+    topicId?: string;
+    topic?: Topic;
 }
 
 export default function SnippetManager() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
+    const [topics, setTopics] = useState<Topic[]>([]);
+    const [selectedTopic, setSelectedTopic] = useState<string>('all');
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [topicDialogOpen, setTopicDialogOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false); // For fuzzy search modal
     const [contentToCreate, setContentToCreate] = useState('');
     const [shortcutsOpen, setShortcutsOpen] = useState(false); // For shortcuts help panel
@@ -40,28 +54,31 @@ export default function SnippetManager() {
             .then(data => {
                 console.log('Fetched snippets:', data.snippets);
                 setSnippets(data.snippets || []);
+                setTopics(data.topics || []);
                 setIsUsingLocalStorage(false);
             })
             .catch(error => {
                 console.warn('Using localStorage fallback due to:', error.message);
                 setSnippets(loadLocalSnippets());
+                setTopics(loadLocalTopics());
                 setIsUsingLocalStorage(true);
             });
     }, []);
 
-    async function createSnippet(name: string, content: string) {
+    async function createSnippet(name: string, content: string, topicId?: string) {
         if (isUsingLocalStorage) {
             // Create a new snippet with a unique ID and timestamp
-            const newSnippet: Snippet = {
-                id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                name,
-                content,
-                createdAt: new Date().toISOString()
-            };
+            const newSnippet = createLocalSnippet(name, content, topicId);
             
-            const updatedSnippets = [...snippets, newSnippet];
-            setSnippets(updatedSnippets);
-            saveLocalSnippets(updatedSnippets);
+            // If topicId is provided, find the topic and attach it
+            if (topicId) {
+                const topic = topics.find(t => t.id === topicId);
+                if (topic) {
+                    newSnippet.topic = topic;
+                }
+            }
+            
+            setSnippets(prev => [...prev, newSnippet]);
             return;
         }
         
@@ -69,7 +86,7 @@ export default function SnippetManager() {
             const res = await fetch('/api/snippets', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, content })
+                body: JSON.stringify({ name, content, topicId })
             });
             
             if (res.ok) {
@@ -85,16 +102,41 @@ export default function SnippetManager() {
             setIsUsingLocalStorage(true);
             
             // Create a new snippet with a unique ID and timestamp
-            const newSnippet: Snippet = {
-                id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                name,
-                content,
-                createdAt: new Date().toISOString()
-            };
+            const newSnippet = createLocalSnippet(name, content, topicId);
             
-            const updatedSnippets = [...snippets, newSnippet];
-            setSnippets(updatedSnippets);
-            saveLocalSnippets(updatedSnippets);
+            setSnippets(prev => [...prev, newSnippet]);
+        }
+    }
+    
+    async function createTopic(name: string, description?: string) {
+        if (isUsingLocalStorage) {
+            const newTopic = createLocalTopic(name, description);
+            setTopics(prev => [...prev, newTopic]);
+            return newTopic;
+        }
+        
+        try {
+            const res = await fetch('/api/topics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                setTopics(prev => [...prev, data.topic]);
+                return data.topic;
+            } else {
+                throw new Error('Failed to create topic');
+            }
+        } catch (error) {
+            console.error('Error creating topic:', error);
+            
+            // Fallback to localStorage if API fails
+            setIsUsingLocalStorage(true);
+            const newTopic = createLocalTopic(name, description);
+            setTopics(prev => [...prev, newTopic]);
+            return newTopic;
         }
     }
 
@@ -123,6 +165,14 @@ export default function SnippetManager() {
         }
     }, []);
 
+    // Filter snippets by selected topic
+    const filteredSnippets = selectedTopic === 'all' 
+        ? snippets 
+        : snippets.filter(snippet => 
+            snippet.topicId === selectedTopic || 
+            (snippet.topic && snippet.topic.id === selectedTopic)
+        );
+        
     const columns: GridColDef<Snippet>[] = [
         { 
             field: 'name', 
@@ -162,6 +212,23 @@ export default function SnippetManager() {
                     </Tooltip>
                 );
             }
+        },
+        {
+            field: 'topic',
+            headerName: 'Topic',
+            width: 150,
+            valueGetter: (params) => params.row.topic?.name || 'Uncategorized',
+            renderCell: (params) => (
+                <Box sx={{ 
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    fontSize: '0.75rem'
+                }}>
+                    {params.row.topic?.name || 'Uncategorized'}
+                </Box>
+            )
         },
         {
             field: 'createdAt',
@@ -307,6 +374,36 @@ export default function SnippetManager() {
                     </Typography>
                 </Tooltip>
             </Box>
+            
+            {/* Topic filter */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button 
+                        variant={selectedTopic === 'all' ? 'contained' : 'outlined'}
+                        size="small"
+                        onClick={() => setSelectedTopic('all')}
+                    >
+                        All
+                    </Button>
+                    {topics.map(topic => (
+                        <Button
+                            key={topic.id}
+                            variant={selectedTopic === topic.id ? 'contained' : 'outlined'}
+                            size="small"
+                            onClick={() => setSelectedTopic(topic.id)}
+                        >
+                            {topic.name} {topic._count && `(${topic._count.snippets})`}
+                        </Button>
+                    ))}
+                </Box>
+                <Button 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => setTopicDialogOpen(true)}
+                >
+                    New Topic
+                </Button>
+            </Box>
 
             <Box
                 sx={{
@@ -320,7 +417,7 @@ export default function SnippetManager() {
                 }}
             >
                 <DataGrid
-                    rows={snippets}
+                    rows={filteredSnippets}
                     columns={columns}
                     getRowId={(row) => row.id}
                     pageSizeOptions={[5, 10]}
@@ -382,7 +479,52 @@ export default function SnippetManager() {
                 onCloseAction={() => setDialogOpen(false)}
                 onCreateAction={createSnippet}
                 initialContent={contentToCreate}
+                topics={topics}
             />
+            
+            {/* Topic Creation Dialog */}
+            <Dialog open={topicDialogOpen} onClose={() => setTopicDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Create New Topic</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="topic-name"
+                        label="Topic Name"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        sx={{ mb: 2, mt: 1 }}
+                    />
+                    <TextField
+                        margin="dense"
+                        id="topic-description"
+                        label="Description (Optional)"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        multiline
+                        rows={3}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setTopicDialogOpen(false)}>Cancel</Button>
+                    <Button 
+                        onClick={() => {
+                            const nameInput = document.getElementById('topic-name') as HTMLInputElement;
+                            const descInput = document.getElementById('topic-description') as HTMLInputElement;
+                            
+                            if (nameInput && nameInput.value) {
+                                createTopic(nameInput.value, descInput?.value || undefined);
+                                setTopicDialogOpen(false);
+                            }
+                        }} 
+                        variant="contained"
+                    >
+                        Create Topic
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Updated prop name to onCloseAction */}
             <FuzzySearchModal
