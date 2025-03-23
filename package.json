@@ -6,7 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate": "npx prisma migrate dev --name init",
+    "generate": "npx prisma generate",
+    "seed": "npx prisma db seed",
+    "setup": "npm install && npm run migrate && npm run generate",
+    "docker:dev": "cd installation && docker-compose up",
+    "docker:build": "cd installation && docker-compose build",
+    "docker:down": "cd installation && docker-compose down"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

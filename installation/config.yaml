@@ -1,0 +1,19 @@
+# MindPlace Configuration
+app:
+  port: 3000
+  host: "0.0.0.0"
+  storage: "database" # or "local"
+  theme: "dark" # light | dark | synthwave
+
+database:
+  enabled: true
+  type: "postgresql"
+  host: "db"
+  port: 5432
+  name: "mindplace"
+  user: "mindplace"
+  password: "mindplace"
+
+localStorage:
+  maxItems: 1000
+  backupInterval: 3600 # seconds

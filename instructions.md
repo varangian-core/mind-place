@@ -1,4 +1,62 @@
-# MindPlace Keyboard Shortcuts
+# MindPlace Installation and Usage
+
+## Installation Options
+
+### 1. Local Development (No Docker)
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Configure PostgreSQL database in `.env` file:
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
+   ```
+4. Run migrations:
+   ```bash
+   npm run migrate
+   ```
+5. Generate Prisma client:
+   ```bash
+   npm run generate
+   ```
+6. Start development server:
+   ```bash
+   npm run dev
+   ```
+
+For local storage mode, simply start the server without configuring the database.
+
+### 2. Docker Development
+
+1. Clone the repository
+2. Navigate to installation folder:
+   ```bash
+   cd installation
+   ```
+3. Start containers:
+   ```bash
+   docker-compose up
+   ```
+4. Access the app at: http://localhost:3000
+
+### Configuration
+
+Edit `installation/config.yaml` to customize:
+- App port and host
+- Storage mode (database or local)
+- Theme preferences
+- Database settings
+- Local storage limits
+
+The app will automatically:
+- Use database when available
+- Fallback to localStorage when database is unavailable
+- Apply theme preferences
+- Backup localStorage data periodically
+
+## Keyboard Shortcuts
 
 MindPlace provides several keyboard shortcuts to enhance your productivity:
 
