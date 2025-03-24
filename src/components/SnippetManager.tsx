@@ -56,16 +56,38 @@ export default function SnippetManager() {
     const handleDragEnd = (event) => {
         const { active, over } = event;
         
+        // Add null checks for active and over objects
+        if (!active || !over || !active.id || !over.id) {
+            console.error('Invalid drag event:', event);
+            return;
+        }
+        
         if (active.id !== over.id) {
             setTopics((topics) => {
-                const oldIndex = topics.findIndex(topic => topic.id === active.id);
-                const newIndex = topics.findIndex(topic => topic.id === over.id);
+                // Add null checks for topic arrays
+                if (!Array.isArray(topics)) {
+                    console.error('Topics is not an array:', topics);
+                    return topics;
+                }
+                
+                const oldIndex = topics.findIndex(topic => topic?.id === active.id);
+                const newIndex = topics.findIndex(topic => topic?.id === over.id);
+                
+                // Validate indices
+                if (oldIndex === -1 || newIndex === -1) {
+                    console.error('Invalid indices:', { oldIndex, newIndex });
+                    return topics;
+                }
                 
                 const newTopics = arrayMove(topics, oldIndex, newIndex);
                 
                 // Save new order to localStorage or API
                 if (isUsingLocalStorage) {
-                    saveLocalTopics(newTopics);
+                    try {
+                        saveLocalTopics(newTopics);
+                    } catch (error) {
+                        console.error('Error saving topics:', error);
+                    }
                 } else {
                     // TODO: Implement API endpoint for reordering
                 }
