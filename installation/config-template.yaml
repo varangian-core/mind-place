@@ -1,0 +1,38 @@
+# MindPlace Configuration Template
+# Copy this file to config.yaml and customize as needed
+
+app:
+  port: 3000
+  host: "0.0.0.0"
+  storage: "database" # or "local"
+  theme: "dark" # light | dark | synthwave
+  analytics: false # Enable/disable usage analytics
+  telemetry: false # Enable/disable error reporting
+
+database:
+  enabled: true
+  type: "postgresql"
+  host: "db"
+  port: 5432
+  name: "mindplace"
+  user: "mindplace"
+  # password will be automatically generated
+
+localStorage:
+  maxItems: 1000
+  backupInterval: 3600 # seconds
+  encryptionKey: "" # Leave blank for auto-generation
+
+security:
+  requireAuth: false
+  sessionTimeout: 3600 # seconds
+  rateLimit: 100 # requests per minute
+  corsOrigins: 
+    - "http://localhost:3000"
+    - "http://127.0.0.1:3000"
+
+logging:
+  level: "info" # debug | info | warn | error
+  file: "/var/log/mindplace/app.log"
+  maxSize: "10MB"
+  maxFiles: 5

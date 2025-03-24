@@ -2,6 +2,17 @@
 
 ## Installation Options
 
+### Automated Installation (Recommended)
+
+1. Make the install script executable:
+   ```bash
+   chmod +x installation/install.sh
+   ```
+2. Run the installation:
+   ```bash
+   ./installation/install.sh
+   ```
+
 ### 1. Local Development (No Docker)
 
 1. Clone the repository
