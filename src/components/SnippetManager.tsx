@@ -9,7 +9,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions, Chip, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { icons } from '@mui/icons-material';
+import * as icons from '@mui/icons-material';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -244,30 +244,40 @@ export default function SnippetManager() {
         );
     
     // Prepare data for DataGrid - ensure all required fields exist
-    const safeSnippets = (filteredSnippets || []).map(snippet => {
-        const safeSnippet = {
-            ...snippet,
-            // Ensure these fields exist to prevent runtime errors
-            id: snippet?.id || `fallback-${Math.random()}`,
-            name: snippet?.name || 'Untitled',
-            content: snippet?.content || '',
-            createdAt: snippet?.createdAt || new Date().toISOString(),
-            // Create a safe topic object
-            topicName: snippet?.topic?.name || 'Uncategorized',
-            // Add any other fields needed by renderCell functions
-        };
+    const safeSnippets = Array.isArray(filteredSnippets) 
+        ? filteredSnippets.map(snippet => {
+            // Create a safe copy of the snippet
+            const safeSnippet = {
+                ...snippet,
+                id: snippet?.id || `fallback-${Math.random()}`,
+                name: snippet?.name || 'Untitled',
+                content: snippet?.content || '',
+                createdAt: snippet?.createdAt || new Date().toISOString(),
+                topicName: snippet?.topic?.name || 'Uncategorized'
+            };
+
+            // Additional validation
+            if (typeof safeSnippet.id !== 'string') {
+                safeSnippet.id = `fallback-${Math.random()}`;
+            }
+            if (typeof safeSnippet.name !== 'string') {
+                safeSnippet.name = 'Untitled';
+            }
+            if (typeof safeSnippet.content !== 'string') {
+                safeSnippet.content = '';
+            }
+            if (typeof safeSnippet.createdAt !== 'string') {
+                safeSnippet.createdAt = new Date().toISOString();
+            }
+            if (typeof safeSnippet.topicName !== 'string') {
+                safeSnippet.topicName = 'Uncategorized';
+            }
+
+            return safeSnippet;
+        })
+        : [];
         
-        // Ensure all required fields exist
-        if (!safeSnippet.id) safeSnippet.id = `fallback-${Math.random()}`;
-        if (!safeSnippet.name) safeSnippet.name = 'Untitled';
-        if (!safeSnippet.content) safeSnippet.content = '';
-        if (!safeSnippet.createdAt) safeSnippet.createdAt = new Date().toISOString();
-        if (!safeSnippet.topicName) safeSnippet.topicName = 'Uncategorized';
-        
-        return safeSnippet;
-    });
-        
-    const columns: GridColDef[] = (safeSnippets && safeSnippets.length > 0) ? [
+    const columns: GridColDef[] = Array.isArray(safeSnippets) ? [
         { 
             field: 'name', 
             headerName: 'Name', 
@@ -380,6 +390,9 @@ export default function SnippetManager() {
             )
         }
     ] : [];
+
+    // Ensure rows is always an array
+    const rows = Array.isArray(safeSnippets) ? safeSnippets : [];
 
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
@@ -556,7 +569,9 @@ export default function SnippetManager() {
 
             <Box
                 sx={{
-                    height: 400,
+                    height: 'calc(100vh - 300px)', // Take up remaining vertical space
+                    minHeight: 400, // Minimum height
+                    maxHeight: 800, // Maximum height
                     mb: 4,
                     borderRadius: 2,
                     overflow: 'hidden',
@@ -564,11 +579,13 @@ export default function SnippetManager() {
                     background: theme.palette.mode === 'dark' 
                         ? `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
                         : theme.palette.background.paper,
-                    transition: 'background 0.3s ease'
+                    transition: 'background 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
                 <DataGrid
-                    rows={safeSnippets}
+                    rows={rows}
                     columns={columns}
                     getRowId={(row) => row.id || 'fallback-id'}
                     pageSizeOptions={[5, 10]}
@@ -578,6 +595,10 @@ export default function SnippetManager() {
                         }
                     }}
                     disableRowSelectionOnClick
+                    sx={{
+                        flex: 1, // Take up all available space in parent
+                        width: '100%'
+                    }}
                     sx={{
                         border: 'none',
                         '.MuiDataGrid-columnHeaders': {
@@ -661,7 +682,7 @@ export default function SnippetManager() {
                                 defaultValue=""
                             >
                                 <MenuItem value="">None</MenuItem>
-                                {Object.entries(icons).map(([name, IconComponent]) => (
+                                {icons && Object.entries(icons).map(([name, IconComponent]) => (
                                     <MenuItem key={name} value={name}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             {React.createElement(IconComponent, { fontSize: 'small' })}
