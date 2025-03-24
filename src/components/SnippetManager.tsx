@@ -6,7 +6,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
 import LinkIcon from '@mui/icons-material/Link';
-import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions, Chip, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions, Chip, MenuItem, Select, FormControl, InputLabel, DialogContentText } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import * as icons from '@mui/icons-material';
@@ -48,6 +48,7 @@ export default function SnippetManager() {
     const [selectedTopic, setSelectedTopic] = useState<string>('all');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [topicDialogOpen, setTopicDialogOpen] = useState(false);
+    const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
     const [searchOpen, setSearchOpen] = useState(false); // For fuzzy search modal
     const [contentToCreate, setContentToCreate] = useState('');
     const [shortcutsOpen, setShortcutsOpen] = useState(false); // For shortcuts help panel
@@ -559,16 +560,28 @@ export default function SnippetManager() {
                                 <SortableItem key={topic.id} id={topic.id} index={index}>
                                     <Chip
                                         label={`${topic.name} ${topic._count ? `(${topic._count.snippets})` : ''}`}
-                                        onClick={() => setSelectedTopic(topic.id)}
-                                        onDelete={selectedTopic === topic.id ? () => handleDeleteTopic(topic.id) : undefined}
-                                        deleteIcon={<DeleteIcon />}
-                                        variant={selectedTopic === topic.id ? 'filled' : 'outlined'}
+                                        onClick={() => {
+                                            setEditingTopic(topic);
+                                            setTopicDialogOpen(true);
+                                        }}
+                                        onDelete={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteTopic(topic.id);
+                                        }}
+                                        deleteIcon={
+                                            <Tooltip title="Delete topic">
+                                                <DeleteIcon />
+                                            </Tooltip>
+                                        }
+                                        variant="outlined"
                                         icon={topic.icon ? React.createElement(icons[topic.icon], { fontSize: 'small' }) : undefined}
                                         sx={{
-                                            backgroundColor: selectedTopic === topic.id ? (topic.color || theme.palette.primary.main) : undefined,
-                                            color: selectedTopic === topic.id ? theme.palette.getContrastText(topic.color || theme.palette.primary.main) : undefined,
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                backgroundColor: theme.palette.action.hover,
+                                            },
                                             '& .MuiChip-deleteIcon': {
-                                                color: selectedTopic === topic.id ? theme.palette.getContrastText(topic.color || theme.palette.primary.main) : undefined,
+                                                color: theme.palette.text.secondary,
                                                 '&:hover': {
                                                     color: theme.palette.error.main
                                                 }
@@ -681,9 +694,17 @@ export default function SnippetManager() {
                 topics={topics}
             />
             
-            {/* Topic Creation Dialog */}
-            <Dialog open={topicDialogOpen} onClose={() => setTopicDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create New Topic</DialogTitle>
+            {/* Topic Creation/Edit Dialog */}
+            <Dialog 
+                open={topicDialogOpen} 
+                onClose={() => {
+                    setTopicDialogOpen(false);
+                    setEditingTopic(null);
+                }} 
+                maxWidth="sm" 
+                fullWidth
+            >
+                <DialogTitle>{editingTopic ? `Edit "${editingTopic.name}"` : 'Create New Topic'}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                         <TextField
@@ -695,13 +716,14 @@ export default function SnippetManager() {
                             fullWidth
                             variant="outlined"
                             sx={{ flex: 2 }}
+                            defaultValue={editingTopic?.name || ''}
                         />
                         <FormControl fullWidth sx={{ flex: 1 }}>
                             <InputLabel>Icon</InputLabel>
                             <Select
                                 label="Icon"
                                 id="topic-icon"
-                                defaultValue=""
+                                defaultValue={editingTopic?.icon || ''}
                             >
                                 <MenuItem value="">None</MenuItem>
                                 {icons && Object.entries(icons).map(([name, IconComponent]) => (
@@ -720,7 +742,7 @@ export default function SnippetManager() {
                         <Select
                             label="Color"
                             id="topic-color"
-                            defaultValue=""
+                            defaultValue={editingTopic?.color || ''}
                         >
                             <MenuItem value="">Default</MenuItem>
                             <MenuItem value="primary">Primary</MenuItem>
@@ -740,7 +762,13 @@ export default function SnippetManager() {
                         variant="outlined"
                         multiline
                         rows={3}
+                        defaultValue={editingTopic?.description || ''}
                     />
+                    {editingTopic && (
+                        <DialogContentText sx={{ mt: 2, color: theme.palette.text.secondary }}>
+                            Created snippets: {editingTopic._count?.snippets || 0}
+                        </DialogContentText>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setTopicDialogOpen(false)}>Cancel</Button>
@@ -753,13 +781,36 @@ export default function SnippetManager() {
                                 const iconInput = document.getElementById('topic-icon') as HTMLSelectElement;
                                 const colorInput = document.getElementById('topic-color') as HTMLSelectElement;
                                 
-                                createTopic(
-                                    nameInput.value, 
-                                    descInput?.value || undefined,
-                                    iconInput?.value || undefined,
-                                    colorInput?.value || undefined
-                                );
+                                if (editingTopic) {
+                                    // Update existing topic
+                                    const updatedTopic = {
+                                        ...editingTopic,
+                                        name: nameInput.value,
+                                        description: descInput?.value || undefined,
+                                        icon: iconInput?.value || undefined,
+                                        color: colorInput?.value || undefined
+                                    };
+                                    
+                                    if (isUsingLocalStorage) {
+                                        const updatedTopics = topics.map(t => 
+                                            t.id === editingTopic.id ? updatedTopic : t
+                                        );
+                                        setTopics(updatedTopics);
+                                        saveLocalTopics(updatedTopics);
+                                    } else {
+                                        // TODO: Implement API endpoint for updating
+                                    }
+                                } else {
+                                    // Create new topic
+                                    createTopic(
+                                        nameInput.value, 
+                                        descInput?.value || undefined,
+                                        iconInput?.value || undefined,
+                                        colorInput?.value || undefined
+                                    );
+                                }
                                 setTopicDialogOpen(false);
+                                setEditingTopic(null);
                             }
                         }} 
                         variant="contained"
