@@ -6,7 +6,8 @@ export interface Topic {
     id: string;
     name: string;
     description?: string;
-    icon?: string; // Add this field
+    icon?: keyof typeof icons;
+    color?: string;
     _count?: {
         snippets: number;
     };

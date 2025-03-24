@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const { name, description, icon } = await req.json(); // Add icon to the request body
+        const { name, description, icon, color } = await req.json();
         if (!name) {
             return NextResponse.json({ error: 'Topic name is required' }, { status: 400 });
         }
@@ -62,7 +62,8 @@ export async function POST(req: Request) {
             data: { 
                 name,
                 description,
-                icon // Include icon in the database
+                icon,
+                color
             }
         });
 

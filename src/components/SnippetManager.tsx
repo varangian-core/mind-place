@@ -1,11 +1,19 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
 import LinkIcon from '@mui/icons-material/Link';
-import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions, Chip, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { icons } from '@mui/icons-material';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
+import { SortableItem } from './SortableItem';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import React, { useEffect, useState } from 'react';
 
@@ -19,7 +27,8 @@ interface Topic {
     id: string;
     name: string;
     description?: string;
-    icon?: string; // Add this field
+    icon?: keyof typeof icons;
+    color?: string;
     _count?: {
         snippets: number;
     };
@@ -44,38 +53,87 @@ export default function SnippetManager() {
     const [contentToCreate, setContentToCreate] = useState('');
     const [shortcutsOpen, setShortcutsOpen] = useState(false); // For shortcuts help panel
     const [isUsingLocalStorage, setIsUsingLocalStorage] = useState(false);
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        
+        if (active.id !== over.id) {
+            setTopics((topics) => {
+                const oldIndex = topics.findIndex(topic => topic.id === active.id);
+                const newIndex = topics.findIndex(topic => topic.id === over.id);
+                
+                const newTopics = arrayMove(topics, oldIndex, newIndex);
+                
+                // Save new order to localStorage or API
+                if (isUsingLocalStorage) {
+                    saveLocalTopics(newTopics);
+                } else {
+                    // TODO: Implement API endpoint for reordering
+                }
+                
+                return newTopics;
+            });
+        }
+    };
+
+    const handleDeleteTopic = async (topicId) => {
+        if (window.confirm('Are you sure you want to delete this topic? All associated snippets will be moved to "Uncategorized".')) {
+            if (isUsingLocalStorage) {
+                // Remove topic and update snippets
+                const updatedTopics = topics.filter(topic => topic.id !== topicId);
+                setTopics(updatedTopics);
+                saveLocalTopics(updatedTopics);
+                
+                // Update snippets to remove topic association
+                const snippets = loadLocalSnippets();
+                const updatedSnippets = snippets.map(snippet => {
+                    if (snippet.topicId === topicId) {
+                        return { ...snippet, topicId: undefined };
+                    }
+                    return snippet;
+                });
+                setSnippets(updatedSnippets);
+                saveLocalSnippets(updatedSnippets);
+            } else {
+                // TODO: Implement API endpoint for deletion
+            }
+        }
+    };
     const theme = useTheme();
 
 
     useEffect(() => {
-        fetch('/api/snippets')
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Database connection failed');
-                }
-                return res.json();
-            })
-            .then(data => {
-                console.log('Fetched snippets:', data);
-                
-                // Check if the API is telling us to use localStorage
-                if (data.usingLocalStorage) {
-                    console.warn('API indicated to use localStorage');
+        // Only run this effect in the browser
+        if (typeof window !== 'undefined') {
+            fetch('/api/snippets')
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Database connection failed');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    console.log('Fetched snippets:', data);
+                    
+                    // Check if the API is telling us to use localStorage
+                    if (data.usingLocalStorage) {
+                        console.warn('API indicated to use localStorage');
+                        setSnippets(loadLocalSnippets());
+                        setTopics(loadLocalTopics());
+                        setIsUsingLocalStorage(true);
+                    } else {
+                        setSnippets(data.snippets || []);
+                        setTopics(data.topics || []);
+                        setIsUsingLocalStorage(false);
+                    }
+                })
+                .catch(error => {
+                    console.warn('Using localStorage fallback due to:', error.message);
                     setSnippets(loadLocalSnippets());
                     setTopics(loadLocalTopics());
                     setIsUsingLocalStorage(true);
-                } else {
-                    setSnippets(data.snippets || []);
-                    setTopics(data.topics || []);
-                    setIsUsingLocalStorage(false);
-                }
-            })
-            .catch(error => {
-                console.warn('Using localStorage fallback due to:', error.message);
-                setSnippets(loadLocalSnippets());
-                setTopics(loadLocalTopics());
-                setIsUsingLocalStorage(true);
-            });
+                });
+        }
     }, []);
 
     async function createSnippet(name: string, content: string, topicId?: string) {
@@ -121,7 +179,7 @@ export default function SnippetManager() {
         }
     }
     
-    async function createTopic(name: string, description?: string) {
+    async function createTopic(name: string, description?: string, icon?: string) {
         if (isUsingLocalStorage) {
             const newTopic = createLocalTopic(name, description);
             setTopics(prev => [...prev, newTopic]);
@@ -431,25 +489,52 @@ export default function SnippetManager() {
                 padding: 2,
                 borderRadius: 2
             }}>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Button 
-                        variant={selectedTopic === 'all' ? 'contained' : 'outlined'}
-                        size="small"
-                        onClick={() => setSelectedTopic('all')}
+                <DndContext 
+                    sensors={useSensors(
+                        useSensor(PointerSensor),
+                        useSensor(KeyboardSensor, {
+                            coordinateGetter: sortableKeyboardCoordinates,
+                        })
+                    )}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext 
+                        items={topics}
+                        strategy={verticalListSortingStrategy}
                     >
-                        All
-                    </Button>
-                    {topics.map(topic => (
-                        <Button
-                            key={topic.id}
-                            variant={selectedTopic === topic.id ? 'contained' : 'outlined'}
-                            size="small"
-                            onClick={() => setSelectedTopic(topic.id)}
-                        >
-                            {topic.name} {topic._count && `(${topic._count.snippets})`}
-                        </Button>
-                    ))}
-                </Box>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Button 
+                                variant={selectedTopic === 'all' ? 'contained' : 'outlined'}
+                                size="small"
+                                onClick={() => setSelectedTopic('all')}
+                            >
+                                All
+                            </Button>
+                            {topics.map((topic, index) => (
+                                <SortableItem key={topic.id} id={topic.id} index={index}>
+                                    <Chip
+                                        label={`${topic.name} ${topic._count ? `(${topic._count.snippets})` : ''}`}
+                                        onClick={() => setSelectedTopic(topic.id)}
+                                        onDelete={selectedTopic === topic.id ? () => handleDeleteTopic(topic.id) : undefined}
+                                        deleteIcon={<DeleteIcon />}
+                                        variant={selectedTopic === topic.id ? 'filled' : 'outlined'}
+                                        icon={topic.icon ? React.createElement(icons[topic.icon], { fontSize: 'small' }) : undefined}
+                                        sx={{
+                                            backgroundColor: selectedTopic === topic.id ? (topic.color || theme.palette.primary.main) : undefined,
+                                            color: selectedTopic === topic.id ? theme.palette.getContrastText(topic.color || theme.palette.primary.main) : undefined,
+                                            '& .MuiChip-deleteIcon': {
+                                                color: selectedTopic === topic.id ? theme.palette.getContrastText(topic.color || theme.palette.primary.main) : undefined,
+                                                '&:hover': {
+                                                    color: theme.palette.error.main
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </SortableItem>
+                            ))}
+                        </Box>
+                    </SortableContext>
+                </DndContext>
                 <Button 
                     variant="outlined" 
                     size="small"
@@ -547,16 +632,52 @@ export default function SnippetManager() {
             <Dialog open={topicDialogOpen} onClose={() => setTopicDialogOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Create New Topic</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        id="topic-name"
-                        label="Topic Name"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        sx={{ mb: 2, mt: 1 }}
-                    />
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="topic-name"
+                            label="Topic Name"
+                            type="text"
+                            fullWidth
+                            variant="outlined"
+                            sx={{ flex: 2 }}
+                        />
+                        <FormControl fullWidth sx={{ flex: 1 }}>
+                            <InputLabel>Icon</InputLabel>
+                            <Select
+                                label="Icon"
+                                id="topic-icon"
+                                defaultValue=""
+                            >
+                                <MenuItem value="">None</MenuItem>
+                                {Object.entries(icons).map(([name, IconComponent]) => (
+                                    <MenuItem key={name} value={name}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            {React.createElement(IconComponent, { fontSize: 'small' })}
+                                            {name}
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel>Color</InputLabel>
+                        <Select
+                            label="Color"
+                            id="topic-color"
+                            defaultValue=""
+                        >
+                            <MenuItem value="">Default</MenuItem>
+                            <MenuItem value="primary">Primary</MenuItem>
+                            <MenuItem value="secondary">Secondary</MenuItem>
+                            <MenuItem value="error">Error</MenuItem>
+                            <MenuItem value="warning">Warning</MenuItem>
+                            <MenuItem value="info">Info</MenuItem>
+                            <MenuItem value="success">Success</MenuItem>
+                        </Select>
+                    </FormControl>
                     <TextField
                         margin="dense"
                         id="topic-description"
@@ -576,7 +697,15 @@ export default function SnippetManager() {
                             const descInput = document.getElementById('topic-description') as HTMLInputElement;
                             
                             if (nameInput && nameInput.value) {
-                                createTopic(nameInput.value, descInput?.value || undefined);
+                                const iconInput = document.getElementById('topic-icon') as HTMLSelectElement;
+                                const colorInput = document.getElementById('topic-color') as HTMLSelectElement;
+                                
+                                createTopic(
+                                    nameInput.value, 
+                                    descInput?.value || undefined,
+                                    iconInput?.value || undefined,
+                                    colorInput?.value || undefined
+                                );
                                 setTopicDialogOpen(false);
                             }
                         }} 
