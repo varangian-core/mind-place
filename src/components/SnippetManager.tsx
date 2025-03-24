@@ -17,7 +17,7 @@ import { SortableItem } from './SortableItem';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 
-import { loadLocalSnippets, loadLocalTopics, createLocalSnippet, createLocalTopic } from '@/lib/localStorageUtils';
+import { loadLocalSnippets, loadLocalTopics, createLocalSnippet, createLocalTopic, saveLocalTopics } from '@/lib/localStorageUtils';
 
 import CreateSnippetDialog from './CreateSnippetDialog';
 import FuzzySearchModal from './FuzzySearchModal';
@@ -53,6 +53,8 @@ export default function SnippetManager() {
     const [contentToCreate, setContentToCreate] = useState('');
     const [shortcutsOpen, setShortcutsOpen] = useState(false); // For shortcuts help panel
     const [isUsingLocalStorage, setIsUsingLocalStorage] = useState(false);
+    const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+    const [topicToDelete, setTopicToDelete] = useState<string | null>(null);
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
@@ -99,17 +101,22 @@ export default function SnippetManager() {
     };
 
     const handleDeleteTopic = async (topicId) => {
-        if (window.confirm('Are you sure you want to delete this topic? All associated snippets will be moved to "Uncategorized".')) {
+        setTopicToDelete(topicId);
+        setConfirmDeleteDialogOpen(true);
+    };
+    
+    const confirmDeleteTopic = async () => {
+        if (topicToDelete) {
             if (isUsingLocalStorage) {
                 // Remove topic and update snippets
-                const updatedTopics = topics.filter(topic => topic.id !== topicId);
+                const updatedTopics = topics.filter(topic => topic.id !== topicToDelete);
                 setTopics(updatedTopics);
                 saveLocalTopics(updatedTopics);
                 
                 // Update snippets to remove topic association
                 const snippets = loadLocalSnippets();
                 const updatedSnippets = snippets.map(snippet => {
-                    if (snippet.topicId === topicId) {
+                    if (snippet.topicId === topicToDelete) {
                         return { ...snippet, topicId: undefined };
                     }
                     return snippet;
@@ -119,6 +126,12 @@ export default function SnippetManager() {
             } else {
                 // TODO: Implement API endpoint for deletion
             }
+            
+            // Close any open dialogs
+            setTopicDialogOpen(false);
+            setConfirmDeleteDialogOpen(false);
+            setTopicToDelete(null);
+            setEditingTopic(null);
         }
     };
     const theme = useTheme();
@@ -560,19 +573,11 @@ export default function SnippetManager() {
                                 <SortableItem key={topic.id} id={topic.id} index={index}>
                                     <Chip
                                         label={`${topic.name} ${topic._count ? `(${topic._count.snippets})` : ''}`}
-                                        onClick={() => {
+                                        onClick={() => setSelectedTopic(topic.id)}
+                                        onDoubleClick={() => {
                                             setEditingTopic(topic);
                                             setTopicDialogOpen(true);
                                         }}
-                                        onDelete={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteTopic(topic.id);
-                                        }}
-                                        deleteIcon={
-                                            <Tooltip title="Delete topic">
-                                                <DeleteIcon />
-                                            </Tooltip>
-                                        }
                                         variant="outlined"
                                         icon={topic.icon ? React.createElement(icons[topic.icon], { fontSize: 'small' }) : undefined}
                                         sx={{
@@ -580,11 +585,23 @@ export default function SnippetManager() {
                                             '&:hover': {
                                                 backgroundColor: theme.palette.action.hover,
                                             },
-                                            '& .MuiChip-deleteIcon': {
+                                            position: 'relative',
+                                            '&::after': {
+                                                content: '"Double-click to edit"',
+                                                position: 'absolute',
+                                                bottom: '-18px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%) scale(0)',
+                                                fontSize: '10px',
                                                 color: theme.palette.text.secondary,
-                                                '&:hover': {
-                                                    color: theme.palette.error.main
-                                                }
+                                                opacity: 0,
+                                                transition: 'all 0.2s ease',
+                                                pointerEvents: 'none',
+                                                whiteSpace: 'nowrap'
+                                            },
+                                            '&:hover::after': {
+                                                opacity: 1,
+                                                transform: 'translateX(-50%) scale(1)'
                                             }
                                         }}
                                     />
@@ -704,7 +721,21 @@ export default function SnippetManager() {
                 maxWidth="sm" 
                 fullWidth
             >
-                <DialogTitle>{editingTopic ? `Edit "${editingTopic.name}"` : 'Create New Topic'}</DialogTitle>
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{editingTopic ? `Edit "${editingTopic.name}"` : 'Create New Topic'}</span>
+                    {editingTopic && (
+                        <Tooltip title="Delete topic">
+                            <IconButton 
+                                edge="end" 
+                                color="error" 
+                                onClick={() => handleDeleteTopic(editingTopic.id)}
+                                aria-label="delete topic"
+                            >
+                                <DeleteIcon />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                         <TextField
@@ -771,7 +802,10 @@ export default function SnippetManager() {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setTopicDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={() => {
+                        setTopicDialogOpen(false);
+                        setEditingTopic(null);
+                    }}>Cancel</Button>
                     <Button 
                         onClick={() => {
                             const nameInput = document.getElementById('topic-name') as HTMLInputElement;
@@ -815,7 +849,7 @@ export default function SnippetManager() {
                         }} 
                         variant="contained"
                     >
-                        Create Topic
+                        {editingTopic ? 'Save Changes' : 'Create Topic'}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -826,6 +860,49 @@ export default function SnippetManager() {
                 onCloseAction={() => setSearchOpen(false)}
                 snippets={snippets}
             />
+
+            {/* Confirm Delete Dialog */}
+            <Dialog
+                open={confirmDeleteDialogOpen}
+                onClose={() => setConfirmDeleteDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ color: theme.palette.error.main }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <DeleteIcon color="error" />
+                        Delete Topic
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {topicToDelete && (
+                            <>
+                                Are you sure you want to delete this topic? 
+                                {topics.find(t => t.id === topicToDelete)?._count?.snippets > 0 && (
+                                    <strong> All associated snippets will be moved to "Uncategorized".</strong>
+                                )}
+                            </>
+                        )}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button 
+                        onClick={() => setConfirmDeleteDialogOpen(false)}
+                        color="primary"
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={confirmDeleteTopic}
+                        color="error"
+                        variant="contained"
+                        startIcon={<DeleteIcon />}
+                    >
+                        Delete Topic
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Keyboard Shortcuts Help Dialog */}
             <Dialog 
