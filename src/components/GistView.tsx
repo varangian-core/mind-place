@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
 import { Box, Typography, Button, Tooltip, TextField, Tabs, Tab, useTheme } from '@mui/material';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import remarkGfm from 'remark-gfm';
 
 interface Snippet {
     id: string;
@@ -42,7 +42,7 @@ export default function GistView({ snippet }: GistViewProps) {
     const pstDate = new Date(snippet.createdAt).toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
 
     const components = {
-        code({ inline, className, children, ...props }: any) {
+        code({ inline, className, children, ...props }: unknown) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
                 <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" {...props}>
@@ -54,7 +54,7 @@ export default function GistView({ snippet }: GistViewProps) {
                 </code>
             );
         },
-        blockquote({ children }: any) {
+        blockquote({ children }: unknown) {
             return (
                 <Box
                     component="blockquote"
@@ -83,7 +83,7 @@ export default function GistView({ snippet }: GistViewProps) {
                 />
             );
         },
-        a({ href, children }: any) {
+        a({ href, children }: unknown) {
             return (
                 <a href={href} target="_blank" rel="noopener noreferrer">
                     {children}
@@ -123,7 +123,7 @@ export default function GistView({ snippet }: GistViewProps) {
 
             {tabIndex === 0 ? (
                 <Box sx={{ background: 'rgba(0,0,0,0.05)', p:2, borderRadius:1 }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components as any}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components as unknown}>
                         {content || '*No content yet.*'}
                     </ReactMarkdown>
                 </Box>

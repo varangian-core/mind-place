@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, ReactNode, createContext, useContext } from 'react';
 import { createTheme, ThemeProvider, CssBaseline, PaletteMode } from '@mui/material';
+import React, { useState, useMemo, ReactNode, createContext } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'synthwave';
 

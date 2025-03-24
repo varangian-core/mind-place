@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import prisma from '@/lib/prisma';
 
 export async function GET() {
@@ -24,7 +25,7 @@ export async function GET() {
         });
         
         return NextResponse.json({ topics });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error fetching topics:', error);
         return NextResponse.json({ 
             topics: [],
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ topic }, { status: 201 });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error creating topic:', error);
         // We can't access req.body directly in the catch block
         // Return a generic response

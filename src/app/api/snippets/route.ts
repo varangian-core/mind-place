@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+
 import { loadLocalSnippets, loadLocalTopics } from '@/lib/localStorageUtils';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
     try {
@@ -32,7 +33,7 @@ export async function GET() {
         
         console.log('Server fetched snippets:', snippets);
         return NextResponse.json({ snippets, topics });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error fetching snippets:', error);
         // Return empty arrays with a flag indicating to use localStorage
         return NextResponse.json({ 
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
         })) || [];
 
         // Prepare data object with optional topic connection
-        const data: any = { 
+        const data: unknown = { 
             name, 
             content, 
             createdAt: now,
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ snippet }, { status: 201 });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error creating snippet:', error);
         // Return a response that tells the client to use localStorage
         // We can't access req.body directly in the catch block

@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Paper, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
-import CreateSnippetDialog from './CreateSnippetDialog';
-import LinkIcon from '@mui/icons-material/Link';
 import DriveFileMoveOutlined from '@mui/icons-material/DriveFileMoveOutlined';
+import LinkIcon from '@mui/icons-material/Link';
+import { Box, Typography, Fab, Tooltip, useTheme, IconButton, Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import React, { useEffect, useState } from 'react';
+
+
+import { loadLocalSnippets, loadLocalTopics, createLocalSnippet, createLocalTopic } from '@/lib/localStorageUtils';
+
+import CreateSnippetDialog from './CreateSnippetDialog';
 import FuzzySearchModal from './FuzzySearchModal';
-import { loadLocalSnippets, saveLocalSnippets, loadLocalTopics, createLocalSnippet, createLocalTopic } from '@/lib/localStorageUtils';
 
 interface Topic {
     id: string;

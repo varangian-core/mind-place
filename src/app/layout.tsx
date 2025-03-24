@@ -1,8 +1,10 @@
 import './globals.css';
-import type { ReactNode } from 'react';
-import Providers from './providers';
-import Sidebar from '@/components/Sidebar';
 import { Box } from '@mui/material';
+import type { ReactNode } from 'react';
+
+import Sidebar from '@/components/Sidebar';
+
+import Providers from './providers';
 
 export const metadata = {
     title: 'MindPlace',

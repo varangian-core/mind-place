@@ -1,7 +1,8 @@
 "use client";
 
+import { Box, CircularProgress, Alert } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+
 import GistView from '@/components/GistView';
 import { findLocalSnippetById } from '@/lib/localStorageUtils';
 

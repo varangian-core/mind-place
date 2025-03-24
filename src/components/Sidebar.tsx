@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useContext } from 'react';
 import { Drawer, Box, Typography, Avatar, FormControl, Select, MenuItem, Divider } from '@mui/material';
+import React, { useContext } from 'react';
+
 import { ThemeContext, ThemeMode } from '@/app/providers';
 
 export default function Sidebar() {

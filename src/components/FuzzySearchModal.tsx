@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { Dialog, DialogTitle, DialogContent, TextField, List, ListItemButton, Typography, IconButton, Box, useTheme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { Dialog, DialogTitle, DialogContent, TextField, List, ListItemButton, Typography, IconButton, Box, useTheme } from '@mui/material';
 import Fuse, { FuseResult } from 'fuse.js';
+import React, { useEffect, useState, useMemo } from 'react';
 
 interface Snippet {
     id: string;
