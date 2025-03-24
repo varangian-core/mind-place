@@ -1,17 +1,9 @@
-import dynamic from 'next/dynamic';
-
-const SnippetManager = dynamic(
-  () => import('@/components/SnippetManager'),
-  { 
-    ssr: false,
-    loading: () => <p>Loading...</p>
-  }
-);
+import SnippetManagerClient from '@/components/SnippetManagerClient';
 
 export default function Page() {
     return (
         <main>
-            <SnippetManager />
+            <SnippetManagerClient />
         </main>
     );
 }

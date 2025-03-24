@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
@@ -15,7 +15,6 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import { arrayMove } from '@dnd-kit/sortable';
 import { SortableItem } from './SortableItem';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import React, { useEffect, useState } from 'react';
 
 
 import { loadLocalSnippets, loadLocalTopics, createLocalSnippet, createLocalTopic } from '@/lib/localStorageUtils';

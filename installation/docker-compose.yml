@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: node:20
+    image: node:18
     container_name: mindplace_app
     restart: unless-stopped
     working_dir: /app
