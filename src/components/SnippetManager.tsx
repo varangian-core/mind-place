@@ -244,19 +244,30 @@ export default function SnippetManager() {
         );
     
     // Prepare data for DataGrid - ensure all required fields exist
-    const safeSnippets = filteredSnippets.map(snippet => ({
-        ...snippet,
-        // Ensure these fields exist to prevent runtime errors
-        id: snippet.id || `fallback-${Math.random()}`,
-        name: snippet.name || 'Untitled',
-        content: snippet.content || '',
-        createdAt: snippet.createdAt || new Date().toISOString(),
-        // Create a safe topic object
-        topicName: snippet.topic?.name || 'Uncategorized',
-        // Add any other fields needed by renderCell functions
-    }));
+    const safeSnippets = (filteredSnippets || []).map(snippet => {
+        const safeSnippet = {
+            ...snippet,
+            // Ensure these fields exist to prevent runtime errors
+            id: snippet?.id || `fallback-${Math.random()}`,
+            name: snippet?.name || 'Untitled',
+            content: snippet?.content || '',
+            createdAt: snippet?.createdAt || new Date().toISOString(),
+            // Create a safe topic object
+            topicName: snippet?.topic?.name || 'Uncategorized',
+            // Add any other fields needed by renderCell functions
+        };
         
-    const columns: GridColDef[] = [
+        // Ensure all required fields exist
+        if (!safeSnippet.id) safeSnippet.id = `fallback-${Math.random()}`;
+        if (!safeSnippet.name) safeSnippet.name = 'Untitled';
+        if (!safeSnippet.content) safeSnippet.content = '';
+        if (!safeSnippet.createdAt) safeSnippet.createdAt = new Date().toISOString();
+        if (!safeSnippet.topicName) safeSnippet.topicName = 'Uncategorized';
+        
+        return safeSnippet;
+    });
+        
+    const columns: GridColDef[] = (safeSnippets && safeSnippets.length > 0) ? [
         { 
             field: 'name', 
             headerName: 'Name', 
@@ -368,7 +379,7 @@ export default function SnippetManager() {
                 </Tooltip>
             )
         }
-    ];
+    ] : [];
 
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
