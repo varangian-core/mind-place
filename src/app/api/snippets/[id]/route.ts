@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import prisma from '@/lib/prisma';
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -25,10 +26,11 @@ export async function GET(
         };
 
         return NextResponse.json({ snippet: snippetForClient });
-    } catch (error: unknown) {
+    } catch (error) {
         console.error('Error fetching snippet:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
         return NextResponse.json(
-            { error: 'Internal Server Error' },
+            { error: errorMessage },
             { status: 500 }
         );
     }
