@@ -26,7 +26,7 @@ export async function GET(
         };
 
         return NextResponse.json({ snippet: snippetForClient });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error fetching snippet:', error);
         const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
         return NextResponse.json(
