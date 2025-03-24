@@ -11,7 +11,7 @@
     "generate": "npx prisma generate",
     "seed": "npx prisma db seed",
     "setup": "npm install && npm run migrate && npm run generate",
-    "docker:dev": "cd installation && docker-compose up",
+    "docker:dev": "cd installation && docker-compose up --build",
     "docker:build": "cd installation && docker-compose build",
     "docker:down": "cd installation && docker-compose down"
   },
@@ -29,20 +29,23 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^9.1.0",
     "react-syntax-highlighter": "^15.6.1",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tailwindcss": "^3.4.16"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@typescript-eslint/eslint-plugin": "^8.27.0",
+    "@typescript-eslint/parser": "^8.27.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "15.0.4",
+    "eslint-plugin-import": "^2.31.0",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prisma": "^6.4.1",
-    "tailwindcss": "^3.4.16",
     "typescript": "^5"
   }
 }

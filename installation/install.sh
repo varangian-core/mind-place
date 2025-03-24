@@ -59,7 +59,7 @@ sed -i.bak "s|CONFIG_FILE=.*|CONFIG_FILE=${CONFIG_FILE}|" docker-compose.yml
 # Create .env file for local development
 cat > ../.env <<EOL
 # MindPlace Local Development Configuration
-DATABASE_URL=postgresql://mindplace:${DB_PASSWORD}@localhost:5432/mindplace
+DATABASE_URL=postgresql://mindplace:${DB_PASSWORD}@db:5432/mindplace
 APP_SECRET=${APP_SECRET}
 EOL
 

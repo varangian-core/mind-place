@@ -12,16 +12,19 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - CONFIG_FILE=${CONFIG_FILE:-/app/installation/config.yaml}
+      - CONFIG_FILE=/Users/odin/.config/mindplace/secrets.env
+      - DATABASE_STARTUP_DELAY=10
+      - DATABASE_URL=postgresql://mindplace:mindplace@db:5432/mindplace
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npm install && npm run migrate && npm run dev"
+    command: sh -c "npm install --production=false && npm run migrate && npm run build && npm run start"
 
   db:
     image: postgres:16
