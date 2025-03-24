@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const { name, description } = await req.json();
+        const { name, description, icon } = await req.json(); // Add icon to the request body
         if (!name) {
             return NextResponse.json({ error: 'Topic name is required' }, { status: 400 });
         }
@@ -61,7 +61,8 @@ export async function POST(req: Request) {
         const topic = await prisma.topic.create({
             data: { 
                 name,
-                description
+                description,
+                icon // Include icon in the database
             }
         });
 

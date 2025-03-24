@@ -19,6 +19,7 @@ interface Topic {
     id: string;
     name: string;
     description?: string;
+    icon?: string; // Add this field
     _count?: {
         snippets: number;
     };

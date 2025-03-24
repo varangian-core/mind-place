@@ -26,6 +26,7 @@ model Topic {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   description String?
+  icon        String?   // Add this field for topic icons
   snippets    Snippet[]
   createdAt   DateTime  @default(now())
 }
