@@ -13,7 +13,7 @@ services:
       - "${APP_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
-      - CONFIG_FILE=/config/secrets.env
+      - CONFIG_FILE=/Users/v/.config/mindplace/secrets.env
       - DATABASE_STARTUP_DELAY=${DATABASE_STARTUP_DELAY:-10}
       - DATABASE_URL=postgresql://${DB_USER:-mindplace}:${DB_PASSWORD}@db:5432/${DB_NAME:-mindplace}
     healthcheck:
