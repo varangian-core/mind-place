@@ -1,6 +1,6 @@
 "use client";
 
-import Box from '@mui/material/Box';
+import { Box } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
@@ -14,12 +14,12 @@ import {
   FiUpload, 
   FiImage, 
   FiType, 
-  FiHeading,
   FiList,
   FiCode,
   FiLink,
   FiMinus,
-  FiChevronRight
+  FiChevronRight,
+  FiHash
 } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -195,26 +195,61 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                 cursorOffset = 4;
                 break;
 
-            // ... keep other cases the same ...
-        
-        const textarea = document.querySelector('textarea');
-        if (!textarea) return;
-        
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const selectedText = content.substring(start, end);
-        
-        let newContent = content;
-        let cursorOffset = 0;
-        
-        switch (format) {
-            case 'tab':
+            case 'italic':
+                if (selectedText.startsWith('_') && selectedText.endsWith('_')) {
+                    newContent = 
+                        content.substring(0, start) +
+                        selectedText.slice(1, -1) +
+                        content.substring(end);
+                    cursorOffset = -1;
+                    newSelectionLength = -2;
+                } else {
+                    newContent = 
+                        content.substring(0, start) +
+                        `_${selectedText || 'italic text'}_` +
+                        content.substring(end);
+                    cursorOffset = 1;
+                    newSelectionLength = selectedText ? 0 : 11;
+                }
+                break;
+
+            case 'code':
                 newContent = 
-                    content.substring(0, start) + 
-                    '    ' + 
+                    content.substring(0, start) +
+                    '```\n' + 
+                    (selectedText || 'code block') + 
+                    '\n```' +
                     content.substring(end);
                 cursorOffset = 4;
+                newSelectionLength = selectedText ? 0 : 10;
                 break;
+
+            case 'image':
+                newContent = 
+                    content.substring(0, start) +
+                    `![alt text](${selectedText || 'image-url'})` +
+                    content.substring(end);
+                cursorOffset = 2;
+                newSelectionLength = selectedText ? 0 : 9;
+                break;
+
+            case 'link':
+                newContent = 
+                    content.substring(0, start) +
+                    `[link text](${selectedText || 'url'})` +
+                    content.substring(end);
+                cursorOffset = 1;
+                newSelectionLength = selectedText ? 0 : 8;
+                break;
+
+            case 'divider':
+                newContent = 
+                    content.substring(0, start) +
+                    '\n---\n' +
+                    content.substring(end);
+                cursorOffset = 5;
+                break;
+        
             case 'h1':
                 newContent = 
                     content.substring(0, start) + 
@@ -279,9 +314,12 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
         
         // Set cursor position after insertion
         setTimeout(() => {
-            textarea.selectionStart = start + cursorOffset;
-            textarea.selectionEnd = start + cursorOffset + (selectedText.length || 0);
-            textarea.focus();
+            const textarea = document.querySelector('textarea');
+            if (textarea) {
+                textarea.selectionStart = start + cursorOffset;
+                textarea.selectionEnd = start + cursorOffset + (selectedText.length + newSelectionLength || 0);
+                textarea.focus();
+            }
         }, 0);
     };
 
@@ -305,11 +343,33 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
         code({ inline, className, children, ...props }: unknown) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-                <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" {...props}>
-                    {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
+                <Box sx={{ 
+                    my: 2,
+                    borderRadius: 1,
+                    overflow: 'hidden'
+                }}>
+                    <SyntaxHighlighter 
+                        style={theme.palette.mode === 'dark' ? vscDarkPlus : oneDark} 
+                        language={match[1]} 
+                        PreTag="div" 
+                        {...props}
+                        customStyle={{
+                            margin: 0,
+                            padding: '1em',
+                            fontSize: '0.9em'
+                        }}
+                    >
+                        {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                </Box>
             ) : (
-                <code className={className} {...props}>
+                <code style={{
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    padding: '0.2em 0.4em',
+                    borderRadius: 3,
+                    fontSize: '0.9em',
+                    fontFamily: 'monospace'
+                }}>
                     {children}
                 </code>
             );
@@ -351,16 +411,37 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
             );
         },
         h1({ children }: unknown) {
-            return <Typography variant="h1" component="h1" sx={{ mt: 3, mb: 2 }}>{children}</Typography>;
+            return <Typography variant="h3" component="h1" sx={{ 
+                fontSize: '2em',
+                fontWeight: 600,
+                mt: 3, 
+                mb: 2 
+            }}>{children}</Typography>;
         },
         h2({ children }: unknown) {
-            return <Typography variant="h2" component="h2" sx={{ mt: 2.5, mb: 1.5 }}>{children}</Typography>;
+            return <Typography variant="h4" component="h2" sx={{ 
+                fontSize: '1.5em',
+                fontWeight: 600,
+                mt: 2.5, 
+                mb: 1.5 
+            }}>{children}</Typography>;
         },
         h3({ children }: unknown) {
-            return <Typography variant="h3" component="h3" sx={{ mt: 2, mb: 1 }}>{children}</Typography>;
+            return <Typography variant="h5" component="h3" sx={{ 
+                fontSize: '1.25em',
+                fontWeight: 600,
+                mt: 2, 
+                mb: 1 
+            }}>{children}</Typography>;
         },
         p({ children }: unknown) {
-            return <Typography paragraph sx={{ mb: 2 }}>{children}</Typography>;
+            return <Typography component="p" sx={{ mb: 2 }}>{children}</Typography>;
+        },
+        strong({ children }: unknown) {
+            return <strong style={{ fontWeight: 600 }}>{children}</strong>;
+        },
+        em({ children }: unknown) {
+            return <em style={{ fontStyle: 'italic' }}>{children}</em>;
         },
         ul({ children }: unknown) {
             return <Box component="ul" sx={{ pl: 4, mb: 2 }}>{children}</Box>;
@@ -381,7 +462,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
     };
 
     return (
-        <Box sx={{ p: 4, maxWidth: '800px', mx: 'auto' }}>
+        <Box component="div" sx={{ p: 4, maxWidth: '800px', mx: 'auto' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <Typography variant="h4" component="h1">
                     {snippet.name}
@@ -417,7 +498,25 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
             </Box>
 
             {tabIndex === 0 ? (
-                <Box sx={{ background: 'rgba(0,0,0,0.05)', p:2, borderRadius:1 }}>
+                <Box sx={{ 
+                    background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    p: 3,
+                    borderRadius: 1,
+                    '& h1, & h2, & h3': {
+                        color: theme.palette.text.primary
+                    },
+                    '& p': {
+                        color: theme.palette.text.secondary,
+                        lineHeight: 1.6
+                    },
+                    '& strong': {
+                        fontWeight: 600,
+                        color: theme.palette.text.primary
+                    },
+                    '& em': {
+                        fontStyle: 'italic'
+                    }
+                }}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[
@@ -459,7 +558,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                             <Button 
                                 variant={currentLine.trim().startsWith('# ') ? "contained" : "outlined"}
                                 size="small"
-                                startIcon={<FiHeading />}
+                                startIcon={<FiHash />}
                                 onClick={() => addFormatting('h1')}
                             >H1</Button>
                         </Tooltip>
@@ -467,7 +566,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                             <Button 
                                 variant="outlined" 
                                 size="small"
-                                startIcon={<FiHeading />}
+                                startIcon={<FiType />}
                                 onClick={() => addFormatting('h2')}
                             >H2</Button>
                         </Tooltip>
@@ -475,7 +574,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                             <Button 
                                 variant="outlined" 
                                 size="small"
-                                startIcon={<FiHeading />}
+                                startIcon={<FiHash />}
                                 onClick={() => addFormatting('h3')}
                             >H3</Button>
                         </Tooltip>
@@ -580,7 +679,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                                 // Continue numbered lists
                                 if (currentLine.match(/^\d+\.\s/)) {
                                     e.preventDefault();
-                                    const lineNumber = parseInt(currentLine.match(/^\d+/)?.[0] || 0;
+                                    const lineNumber = parseInt(currentLine.match(/^\d+/)?.[0] || '0');
                                     const newLine = `\n${lineNumber + 1}. `;
                                     setContent(prev => 
                                         prev.substring(0, start) + 
