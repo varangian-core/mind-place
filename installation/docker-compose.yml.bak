@@ -13,9 +13,9 @@ services:
       - "${APP_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
-      - CONFIG_FILE=/config/secrets.env
+      - CONFIG_FILE=/Users/v/.config/mindplace/secrets.env
       - DATABASE_STARTUP_DELAY=${DATABASE_STARTUP_DELAY:-10}
-      - DATABASE_URL=postgresql://${DB_USER:-mindplace}:${DB_PASSWORD}@db:5432/${DB_NAME:-mindplace}
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-mindplace}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 10s
@@ -32,16 +32,17 @@ services:
     container_name: mindplace_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-mindplace}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-mindplace}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-mindplace}
+      POSTGRES_HOST_AUTH_METHOD: ${DB_HOST_AUTH_METHOD:-trust}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mindplace}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
