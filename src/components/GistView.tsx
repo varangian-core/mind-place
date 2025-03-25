@@ -1,6 +1,13 @@
 "use client";
 
-import { Box, Typography, Button, Tooltip, TextField, Tabs, Tab, useTheme } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import TextField from '@mui/material/TextField';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import { useTheme } from '@mui/material/styles';
 import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { 
