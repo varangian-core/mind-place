@@ -4,8 +4,17 @@ import { Box, Typography, Button, Tooltip, TextField, Tabs, Tab, useTheme } from
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { vscDarkPlus, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    timezone?: string;
+}
 
 interface Snippet {
     id: string;
@@ -18,13 +27,15 @@ interface Snippet {
         name: string;
         description?: string;
     };
+    user?: User;
 }
 
 interface GistViewProps {
     snippet: Snippet;
+    currentUser?: User;
 }
 
-export default function GistView({ snippet }: GistViewProps) {
+export default function GistView({ snippet, currentUser }: GistViewProps) {
     const [content, setContent] = useState(snippet.content);
     const [tabIndex, setTabIndex] = useState(0); // 0: view, 1: edit
     const [copied, setCopied] = useState(false);
@@ -38,8 +49,13 @@ export default function GistView({ snippet }: GistViewProps) {
         setTimeout(() => setCopied(false), 2000);
     }
 
-    // Convert the ISO UTC string to PST for display
-    const pstDate = new Date(snippet.createdAt).toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+    // Convert the ISO UTC string to user's timezone
+    const userTimezone = currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const formattedDate = new Date(snippet.createdAt).toLocaleString("en-US", { 
+        timeZone: userTimezone,
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
 
     const components = {
         code({ inline, className, children, ...props }: unknown) {
@@ -89,6 +105,34 @@ export default function GistView({ snippet }: GistViewProps) {
                     {children}
                 </a>
             );
+        },
+        h1({ children }: unknown) {
+            return <Typography variant="h1" component="h1" sx={{ mt: 3, mb: 2 }}>{children}</Typography>;
+        },
+        h2({ children }: unknown) {
+            return <Typography variant="h2" component="h2" sx={{ mt: 2.5, mb: 1.5 }}>{children}</Typography>;
+        },
+        h3({ children }: unknown) {
+            return <Typography variant="h3" component="h3" sx={{ mt: 2, mb: 1 }}>{children}</Typography>;
+        },
+        p({ children }: unknown) {
+            return <Typography paragraph sx={{ mb: 2 }}>{children}</Typography>;
+        },
+        ul({ children }: unknown) {
+            return <Box component="ul" sx={{ pl: 4, mb: 2 }}>{children}</Box>;
+        },
+        ol({ children }: unknown) {
+            return <Box component="ol" sx={{ pl: 4, mb: 2 }}>{children}</Box>;
+        },
+        li({ children }: unknown) {
+            return <Box component="li" sx={{ mb: 1 }}>{children}</Box>;
+        },
+        table({ children }: unknown) {
+            return (
+                <Box component="div" sx={{ overflowX: 'auto', mb: 2 }}>
+                    <Box component="table" sx={{ minWidth: 650 }}>{children}</Box>
+                </Box>
+            );
         }
     };
 
@@ -110,9 +154,16 @@ export default function GistView({ snippet }: GistViewProps) {
                     </Box>
                 )}
             </Box>
-            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                Created: {pstDate} (PST)
-            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" color="text.secondary">
+                    Created: {formattedDate} ({userTimezone})
+                </Typography>
+                {snippet.user && (
+                    <Typography variant="subtitle2" color="text.secondary">
+                        by {snippet.user.name || snippet.user.email}
+                    </Typography>
+                )}
+            </Box>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
                 <Tabs value={tabIndex} onChange={(e, newVal) => setTabIndex(newVal)}>
@@ -123,7 +174,12 @@ export default function GistView({ snippet }: GistViewProps) {
 
             {tabIndex === 0 ? (
                 <Box sx={{ background: 'rgba(0,0,0,0.05)', p:2, borderRadius:1 }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components as unknown}>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                        components={components as unknown}
+                        skipHtml={false}
+                    >
                         {content || '*No content yet.*'}
                     </ReactMarkdown>
                 </Box>
@@ -135,6 +191,13 @@ export default function GistView({ snippet }: GistViewProps) {
                     fullWidth
                     multiline
                     rows={15}
+                    sx={{
+                        fontFamily: 'monospace',
+                        '& .MuiInputBase-input': {
+                            fontSize: '0.875rem',
+                            lineHeight: 1.5,
+                        }
+                    }}
                 />
             )}
 
