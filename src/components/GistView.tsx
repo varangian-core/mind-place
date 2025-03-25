@@ -84,33 +84,111 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
     }, []);
 
     const addFormatting = (format: string) => {
-        const formats = {
-            h1: '\n# Heading 1\n',
-            h2: '\n## Heading 2\n',
-            h3: '\n### Heading 3\n',
-            bold: '**bold text**',
-            italic: '_italic text_',
-            code: '```\ncode block\n```',
-            image: '![alt text](image-url)',
-            link: '[link text](url)',
-            list: (selectedText) => selectedText 
-                ? selectedText.split('\n').map(line => `- ${line}`).join('\n')
-                : '- List item',
-            numberedList: (selectedText) => selectedText 
-                ? selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n')
-                : '1. List item',
-            quote: (selectedText) => selectedText 
-                ? selectedText.split('\n').map(line => `> ${line}`).join('\n')
-                : '> Block quote',
-            divider: '\n---\n',
-            tab: '    ', // 4 spaces for tab
-            header: (level, selectedText) => {
+        const textarea = document.querySelector('textarea');
+        if (!textarea) return;
+        
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = content.substring(start, end);
+        const lineStart = content.lastIndexOf('\n', start - 1) + 1;
+        const lineEnd = content.indexOf('\n', end);
+        const currentLine = lineEnd === -1 
+            ? content.substring(lineStart)
+            : content.substring(lineStart, lineEnd);
+        
+        let newContent = content;
+        let cursorOffset = 0;
+        let newSelectionLength = 0;
+
+        switch (format) {
+            case 'h1':
+            case 'h2':
+            case 'h3':
+                const level = parseInt(format[1]);
                 const hashes = '#'.repeat(level);
-                return selectedText 
-                    ? `${hashes} ${selectedText}`
-                    : `${hashes} Heading ${level}`;
-            }
-        };
+                if (currentLine.trim().startsWith('#')) {
+                    // Remove existing header if already a header
+                    newContent = 
+                        content.substring(0, lineStart) +
+                        currentLine.replace(/^#+\s*/, '') +
+                        content.substring(lineEnd);
+                    cursorOffset = -currentLine.match(/^#+\s*/)?.[0]?.length || 0;
+                } else {
+                    // Add header formatting
+                    newContent = 
+                        content.substring(0, lineStart) +
+                        `${hashes} ${currentLine}` +
+                        content.substring(lineEnd);
+                    cursorOffset = hashes.length + 1;
+                }
+                break;
+
+            case 'list':
+                if (currentLine.match(/^[*-]\s/)) {
+                    // Remove list formatting if already a list
+                    newContent = 
+                        content.substring(0, lineStart) +
+                        currentLine.replace(/^[*-]\s/, '') +
+                        content.substring(lineEnd);
+                    cursorOffset = -2;
+                } else {
+                    // Add list formatting
+                    newContent = 
+                        content.substring(0, lineStart) +
+                        `- ${currentLine}` +
+                        content.substring(lineEnd);
+                    cursorOffset = 2;
+                }
+                break;
+
+            case 'numberedList':
+                if (currentLine.match(/^\d+\.\s/)) {
+                    // Remove numbered list formatting if already numbered
+                    newContent = 
+                        content.substring(0, lineStart) +
+                        currentLine.replace(/^\d+\.\s/, '') +
+                        content.substring(lineEnd);
+                    cursorOffset = -currentLine.match(/^\d+\.\s/)?.[0]?.length || 0;
+                } else {
+                    // Add numbered list formatting
+                    const lineNumber = content.substring(0, lineStart).split('\n').filter(l => l.match(/^\d+\.\s/)).length + 1;
+                    newContent = 
+                        content.substring(0, lineStart) +
+                        `${lineNumber}. ${currentLine}` +
+                        content.substring(lineEnd);
+                    cursorOffset = `${lineNumber}. `.length;
+                }
+                break;
+
+            case 'bold':
+                if (selectedText.startsWith('**') && selectedText.endsWith('**')) {
+                    // Remove bold formatting if already bold
+                    newContent = 
+                        content.substring(0, start) +
+                        selectedText.slice(2, -2) +
+                        content.substring(end);
+                    cursorOffset = -2;
+                    newSelectionLength = -4;
+                } else {
+                    // Add bold formatting
+                    newContent = 
+                        content.substring(0, start) +
+                        `**${selectedText || 'bold text'}**` +
+                        content.substring(end);
+                    cursorOffset = 2;
+                    newSelectionLength = selectedText ? 0 : 9;
+                }
+                break;
+
+            case 'tab':
+                newContent = 
+                    content.substring(0, start) + 
+                    '    ' + 
+                    content.substring(end);
+                cursorOffset = 4;
+                break;
+
+            // ... keep other cases the same ...
         
         const textarea = document.querySelector('textarea');
         if (!textarea) return;
@@ -372,7 +450,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                     }}>
                         <Tooltip title="Heading 1 (Cmd+1)">
                             <Button 
-                                variant="outlined" 
+                                variant={currentLine.trim().startsWith('# ') ? "contained" : "outlined"}
                                 size="small"
                                 startIcon={<FiHeading />}
                                 onClick={() => addFormatting('h1')}
@@ -478,52 +556,71 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                         multiline
                         rows={15}
                         onKeyDown={(e) => {
-                            if (e.metaKey || e.ctrlKey) {
-                                switch (e.key) {
-                                    case 'b':
-                                        e.preventDefault();
-                                        addFormatting('bold');
-                                        break;
-                                    case 'i':
-                                        e.preventDefault();
-                                        addFormatting('italic');
-                                        break;
-                                    case '1':
-                                        e.preventDefault();
-                                        addFormatting('h1');
-                                        break;
-                                    case '2':
-                                        e.preventDefault();
-                                        addFormatting('h2');
-                                        break;
-                                    case '3':
-                                        e.preventDefault();
-                                        addFormatting('h3');
-                                        break;
-                                    case 'l':
-                                        e.preventDefault();
-                                        if (e.shiftKey) {
-                                            addFormatting('numberedList');
-                                        } else {
-                                            addFormatting('list');
-                                        }
-                                        break;
-                                    case 'k':
-                                        e.preventDefault();
-                                        addFormatting('code');
-                                        break;
-                                    case 'q':
-                                        e.preventDefault();
-                                        addFormatting('quote');
-                                        break;
-                                    case 'd':
-                                        e.preventDefault();
-                                        addFormatting('divider');
-                                        break;
-                                }
-                            } else if (e.key === 'Tab') {
+                            // Handle tab key
+                            if (e.key === 'Tab') {
                                 e.preventDefault();
                                 addFormatting('tab');
+                                return;
+                            }
+
+                            // Handle enter key for lists
+                            if (e.key === 'Enter') {
+                                const textarea = e.target as HTMLTextAreaElement;
+                                const start = textarea.selectionStart;
+                                const lineStart = content.lastIndexOf('\n', start - 1) + 1;
+                                const currentLine = content.substring(lineStart, start);
+                                
+                                // Continue numbered lists
+                                if (currentLine.match(/^\d+\.\s/)) {
+                                    e.preventDefault();
+                                    const lineNumber = parseInt(currentLine.match(/^\d+/)?.[0] || 0;
+                                    const newLine = `\n${lineNumber + 1}. `;
+                                    setContent(prev => 
+                                        prev.substring(0, start) + 
+                                        newLine + 
+                                        prev.substring(start)
+                                    );
+                                    setTimeout(() => {
+                                        textarea.selectionStart = start + newLine.length;
+                                        textarea.selectionEnd = start + newLine.length;
+                                    }, 0);
+                                    return;
+                                }
+
+                                // Continue bullet lists
+                                if (currentLine.match(/^[*-]\s/)) {
+                                    e.preventDefault();
+                                    setContent(prev => 
+                                        prev.substring(0, start) + 
+                                        '\n- ' + 
+                                        prev.substring(start)
+                                    );
+                                    setTimeout(() => {
+                                        textarea.selectionStart = start + 3;
+                                        textarea.selectionEnd = start + 3;
+                                    }, 0);
+                                    return;
+                                }
+                            }
+
+                            // Handle formatting shortcuts
+                            if (e.metaKey || e.ctrlKey) {
+                                e.preventDefault();
+                                switch (e.key) {
+                                    case 'b': addFormatting('bold'); break;
+                                    case 'i': addFormatting('italic'); break;
+                                    case '1': addFormatting('h1'); break;
+                                    case '2': addFormatting('h2'); break;
+                                    case '3': addFormatting('h3'); break;
+                                    case 'l': 
+                                        e.shiftKey 
+                                            ? addFormatting('numberedList') 
+                                            : addFormatting('list'); 
+                                        break;
+                                    case 'k': addFormatting('code'); break;
+                                    case 'q': addFormatting('quote'); break;
+                                    case 'd': addFormatting('divider'); break;
+                                }
                             }
                         }}
                         sx={{
