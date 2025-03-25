@@ -93,10 +93,23 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
             code: '```\ncode block\n```',
             image: '![alt text](image-url)',
             link: '[link text](url)',
-            list: '- List item',
-            quote: '> Block quote',
+            list: (selectedText) => selectedText 
+                ? selectedText.split('\n').map(line => `- ${line}`).join('\n')
+                : '- List item',
+            numberedList: (selectedText) => selectedText 
+                ? selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n')
+                : '1. List item',
+            quote: (selectedText) => selectedText 
+                ? selectedText.split('\n').map(line => `> ${line}`).join('\n')
+                : '> Block quote',
             divider: '\n---\n',
-            tab: '    ' // 4 spaces for tab
+            tab: '    ', // 4 spaces for tab
+            header: (level, selectedText) => {
+                const hashes = '#'.repeat(level);
+                return selectedText 
+                    ? `${hashes} ${selectedText}`
+                    : `${hashes} Heading ${level}`;
+            }
         };
         
         const textarea = document.querySelector('textarea');
@@ -118,14 +131,53 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                 cursorOffset = 4;
                 break;
             case 'h1':
+                newContent = 
+                    content.substring(0, start) + 
+                    formats.header(1, selectedText) + 
+                    content.substring(end);
+                cursorOffset = 2;
+                break;
             case 'h2':
+                newContent = 
+                    content.substring(0, start) + 
+                    formats.header(2, selectedText) + 
+                    content.substring(end);
+                cursorOffset = 3;
+                break;
             case 'h3':
+                newContent = 
+                    content.substring(0, start) + 
+                    formats.header(3, selectedText) + 
+                    content.substring(end);
+                cursorOffset = 4;
+                break;
+            case 'list':
+                newContent = 
+                    content.substring(0, start) + 
+                    formats.list(selectedText) + 
+                    content.substring(end);
+                cursorOffset = 2;
+                break;
+            case 'numberedList':
+                newContent = 
+                    content.substring(0, start) + 
+                    formats.numberedList(selectedText) + 
+                    content.substring(end);
+                cursorOffset = 3;
+                break;
             case 'quote':
+                newContent = 
+                    content.substring(0, start) + 
+                    formats.quote(selectedText) + 
+                    content.substring(end);
+                cursorOffset = 2;
+                break;
             case 'divider':
                 newContent = 
                     content.substring(0, start) + 
-                    formats[format as keyof typeof formats] + 
+                    formats.divider + 
                     content.substring(end);
+                cursorOffset = 4;
                 break;
             default:
                 newContent = 
@@ -133,7 +185,9 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                     formats[format as keyof typeof formats] + 
                     (selectedText ? selectedText : '') + 
                     content.substring(end);
-                cursorOffset = formats[format as keyof typeof formats].length;
+                cursorOffset = typeof formats[format as keyof typeof formats] === 'string' 
+                    ? formats[format as keyof typeof formats].length 
+                    : 0;
         }
         
         setContent(newContent);
@@ -348,13 +402,21 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                                 onClick={() => addFormatting('bold')}
                             >B</Button>
                         </Tooltip>
-                        <Tooltip title="List (Cmd+L)">
+                        <Tooltip title="Bullet List (Cmd+L)">
                             <Button 
                                 variant="outlined" 
                                 size="small"
                                 startIcon={<FiList />}
                                 onClick={() => addFormatting('list')}
-                            >List</Button>
+                            >Bullets</Button>
+                        </Tooltip>
+                        <Tooltip title="Numbered List (Cmd+Shift+L)">
+                            <Button 
+                                variant="outlined" 
+                                size="small"
+                                startIcon={<FiList />}
+                                onClick={() => addFormatting('numberedList')}
+                            >Numbers</Button>
                         </Tooltip>
                         <Tooltip title="Code (Cmd+K)">
                             <Button 
@@ -440,7 +502,11 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                                         break;
                                     case 'l':
                                         e.preventDefault();
-                                        addFormatting('list');
+                                        if (e.shiftKey) {
+                                            addFormatting('numberedList');
+                                        } else {
+                                            addFormatting('list');
+                                        }
                                         break;
                                     case 'k':
                                         e.preventDefault();
