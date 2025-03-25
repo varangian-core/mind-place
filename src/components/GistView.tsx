@@ -7,7 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 
 interface User {
     id: string;
@@ -176,7 +176,20 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                 <Box sx={{ background: 'rgba(0,0,0,0.05)', p:2, borderRadius:1 }}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                        rehypePlugins={[
+                            rehypeRaw,
+                            [rehypeSanitize, {
+                                ...defaultSchema,
+                                attributes: {
+                                    ...defaultSchema.attributes,
+                                    code: [
+                                        ...(defaultSchema.attributes?.code || []),
+                                        // Allow class names for syntax highlighting
+                                        ['className']
+                                    ]
+                                }
+                            }]
+                        ]}
                         components={components as unknown}
                         skipHtml={false}
                     >
