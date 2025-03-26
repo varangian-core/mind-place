@@ -513,16 +513,17 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
                 <Tabs value={tabIndex} onChange={(e, newVal) => setTabIndex(newVal)}>
-                    <Tab label="View" />
+                    <Tab label="Preview" />
                     <Tab label="Edit" />
                 </Tabs>
             </Box>
 
             {tabIndex === 0 ? (
-                <Box sx={{ 
+                <Box component="div" sx={{ 
                     background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                     p: 3,
                     borderRadius: 1,
+                    minHeight: '300px',
                     '& *': {
                         wordBreak: 'break-word',
                         whiteSpace: 'pre-wrap'
@@ -602,7 +603,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                     }}>
                         <Tooltip title="Heading 1 (Cmd+1)">
                             <Button 
-                                variant={currentLine.trim().startsWith('# ') ? "contained" : "outlined"}
+                                variant="outlined"
                                 size="small"
                                 startIcon={<FiHash />}
                                 onClick={() => addFormatting('h1')}
@@ -708,6 +709,11 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                         multiline
                         rows={15}
                         onKeyDown={(e) => {
+                            const textarea = e.target as HTMLTextAreaElement;
+                            const start = textarea.selectionStart;
+                            const lineStart = content.lastIndexOf('\n', start - 1) + 1;
+                            const currentLine = content.substring(lineStart, start);
+
                             // Handle tab key
                             if (e.key === 'Tab') {
                                 e.preventDefault();
@@ -717,10 +723,6 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
 
                             // Handle enter key for lists
                             if (e.key === 'Enter') {
-                                const textarea = e.target as HTMLTextAreaElement;
-                                const start = textarea.selectionStart;
-                                const lineStart = content.lastIndexOf('\n', start - 1) + 1;
-                                const currentLine = content.substring(lineStart, start);
                                 
                                 // Continue numbered lists
                                 if (currentLine.match(/^\d+\.\s/)) {
