@@ -411,27 +411,33 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
             );
         },
         h1({ children }: unknown) {
-            return <Typography variant="h3" component="h1" sx={{ 
+            return <Typography component="h1" sx={{ 
                 fontSize: '2em',
-                fontWeight: 600,
+                fontWeight: 700,
                 mt: 3, 
-                mb: 2 
+                mb: 2,
+                lineHeight: 1.3,
+                color: theme.palette.text.primary
             }}>{children}</Typography>;
         },
         h2({ children }: unknown) {
-            return <Typography variant="h4" component="h2" sx={{ 
+            return <Typography component="h2" sx={{ 
                 fontSize: '1.5em',
                 fontWeight: 600,
                 mt: 2.5, 
-                mb: 1.5 
+                mb: 1.5,
+                lineHeight: 1.3,
+                color: theme.palette.text.primary
             }}>{children}</Typography>;
         },
         h3({ children }: unknown) {
-            return <Typography variant="h5" component="h3" sx={{ 
-                fontSize: '1.25em',
+            return <Typography component="h3" sx={{ 
+                fontSize: '1.17em',
                 fontWeight: 600,
                 mt: 2, 
-                mb: 1 
+                mb: 1,
+                lineHeight: 1.3,
+                color: theme.palette.text.primary
             }}>{children}</Typography>;
         },
         p({ children }: unknown) {
@@ -444,13 +450,28 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
             return <em style={{ fontStyle: 'italic' }}>{children}</em>;
         },
         ul({ children }: unknown) {
-            return <Box component="ul" sx={{ pl: 4, mb: 2 }}>{children}</Box>;
+            return <Box component="ul" sx={{ 
+                pl: 4, 
+                mb: 2,
+                listStyleType: 'disc',
+                '& ul': { listStyleType: 'circle' },
+                '& ul ul': { listStyleType: 'square' }
+            }}>{children}</Box>;
         },
         ol({ children }: unknown) {
-            return <Box component="ol" sx={{ pl: 4, mb: 2 }}>{children}</Box>;
+            return <Box component="ol" sx={{ 
+                pl: 4, 
+                mb: 2,
+                listStyleType: 'decimal',
+                '& ol': { listStyleType: 'lower-alpha' },
+                '& ol ol': { listStyleType: 'lower-roman' }
+            }}>{children}</Box>;
         },
         li({ children }: unknown) {
-            return <Box component="li" sx={{ mb: 1 }}>{children}</Box>;
+            return <Box component="li" sx={{ 
+                mb: 1,
+                '& > p': { display: 'inline', m: 0 }
+            }}>{children}</Box>;
         },
         table({ children }: unknown) {
             return (
@@ -502,18 +523,39 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                     background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                     p: 3,
                     borderRadius: 1,
-                    '& h1, & h2, & h3': {
-                        color: theme.palette.text.primary
+                    '& *': {
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap'
+                    },
+                    '& h1, & h2, & h3, & h4, & h5, & h6': {
+                        color: theme.palette.text.primary,
+                        lineHeight: 1.3,
+                        '&:first-of-type': { mt: 0 }
                     },
                     '& p': {
                         color: theme.palette.text.secondary,
-                        lineHeight: 1.6
+                        lineHeight: 1.6,
+                        mb: 2
                     },
                     '& strong': {
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: theme.palette.text.primary
                     },
                     '& em': {
+                        fontStyle: 'italic'
+                    },
+                    '& ul, & ol': {
+                        mb: 2,
+                        pl: 4
+                    },
+                    '& li': {
+                        mb: 1
+                    },
+                    '& blockquote': {
+                        borderLeft: `4px solid ${theme.palette.divider}`,
+                        pl: 2,
+                        my: 2,
+                        color: theme.palette.text.secondary,
                         fontStyle: 'italic'
                     }
                 }}>
@@ -527,14 +569,18 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                                     ...defaultSchema.attributes,
                                     code: [
                                         ...(defaultSchema.attributes?.code || []),
-                                        // Allow class names for syntax highlighting
+                                        ['className']
+                                    ],
+                                    span: [
+                                        ...(defaultSchema.attributes?.span || []),
                                         ['className']
                                     ]
                                 }
                             }]
                         ]}
-                        components={components as unknown}
+                        components={components}
                         skipHtml={false}
+                        unwrapDisallowed={false}
                     >
                         {content || '*No content yet.*'}
                     </ReactMarkdown>
