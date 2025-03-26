@@ -519,7 +519,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
             </Box>
 
             {tabIndex === 0 ? (
-                <Box component="div" sx={{ 
+                <Box component="div" className="markdown-preview" sx={{ 
                     background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                     p: 3,
                     borderRadius: 1,
@@ -527,37 +527,6 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                     '& *': {
                         wordBreak: 'break-word',
                         whiteSpace: 'pre-wrap'
-                    },
-                    '& h1, & h2, & h3, & h4, & h5, & h6': {
-                        color: theme.palette.text.primary,
-                        lineHeight: 1.3,
-                        '&:first-of-type': { mt: 0 }
-                    },
-                    '& p': {
-                        color: theme.palette.text.secondary,
-                        lineHeight: 1.6,
-                        mb: 2
-                    },
-                    '& strong': {
-                        fontWeight: 700,
-                        color: theme.palette.text.primary
-                    },
-                    '& em': {
-                        fontStyle: 'italic'
-                    },
-                    '& ul, & ol': {
-                        mb: 2,
-                        pl: 4
-                    },
-                    '& li': {
-                        mb: 1
-                    },
-                    '& blockquote': {
-                        borderLeft: `4px solid ${theme.palette.divider}`,
-                        pl: 2,
-                        my: 2,
-                        color: theme.palette.text.secondary,
-                        fontStyle: 'italic'
                     }
                 }}>
                     <ReactMarkdown
@@ -587,19 +556,34 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                     </ReactMarkdown>
                 </Box>
             ) : (
-                <Box {...getRootProps()} sx={{ 
+                <Box sx={{ 
                     border: isDragActive ? '2px dashed #1976d2' : '1px dashed #ccc',
                     borderRadius: 1,
                     p: 2,
                     mb: 2,
-                    backgroundColor: isDragActive ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                    backgroundColor: isDragActive ? 'rgba(25, 118, 210, 0.1)' : 'transparent',
+                    position: 'relative'
                 }}>
+                    <Box {...getRootProps()} sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 1,
+                        pointerEvents: isDragActive ? 'auto' : 'none'
+                    }}>
+                        <input {...getInputProps()} />
+                    </Box>
                     <input {...getInputProps()} />
                     <Box sx={{ 
                         display: 'flex', 
                         gap: 1, 
                         mb: 2,
-                        flexWrap: 'wrap'
+                        flexWrap: 'wrap',
+                        '& button': {
+                            pointerEvents: 'auto'
+                        }
                     }}>
                         <Tooltip title="Heading 1 (Cmd+1)">
                             <Button 
@@ -781,7 +765,14 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                             fontFamily: 'monospace',
                             '& .MuiInputBase-input': {
                                 fontSize: '0.875rem',
-                                lineHeight: 1.5,
+                                lineHeight: 1.6,
+                                whiteSpace: 'pre-wrap',
+                                color: theme.palette.text.primary
+                            },
+                            '& .MuiInputBase-root': {
+                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                borderRadius: 1,
+                                padding: 1
                             }
                         }}
                     />
@@ -797,7 +788,7 @@ export default function GistView({ snippet, currentUser }: GistViewProps) {
                             alignItems: 'center',
                             justifyContent: 'center',
                             backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            zIndex: 1
+                            zIndex: 2
                         }}>
                             <Typography variant="h6" color="primary">
                                 Drop image to upload
