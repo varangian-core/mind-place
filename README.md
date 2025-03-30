@@ -4,6 +4,12 @@
 
 ## ✨ Features
 
+- **Secure Authentication**:
+  - Google Sign-In with OAuth
+  - Browser-native authentication flow
+  - Session management
+  - Protected routes
+
 - **Theming Options:**  
   Choose from **Light**, **Dark**, or **Synthwave** modes, directly from the sidebar. Instantly transform your interface’s look and feel.
 
@@ -32,7 +38,32 @@
 
 ## 🚀 Getting Started
 
-1. **Clone the repo:**
+### Prerequisites
+- Node.js (v18+ recommended)
+- PostgreSQL database
+- Google Cloud account (for OAuth setup)
+
+### Authentication Setup
+1. **Create a `.env.local` file** in your project root with:
+   ```bash
+   DATABASE_URL=postgresql://user:password@localhost:5432/mindplace
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your-secure-random-string
+   ```
+
+2. **Get Google OAuth credentials**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create OAuth credentials for a Web Application
+   - Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+
+3. **Generate a secure secret**:
+   ```bash
+   openssl rand -base64 32
+   ```
+
+### Installation
+1. **Clone the repo**:
    ```bash
    git clone https://github.com/varangian-core/mind-place.git
    cd mind-place
